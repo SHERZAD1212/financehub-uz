@@ -158,7 +158,10 @@ async function loadState() {
     reports: (repR.data || []).map(mapReport)
   };
 
-  activeFirmId = state.firms[0] ? state.firms[0].id : null;
+  const stillExists = state.firms.some(f => f.id === activeFirmId);
+  if (!stillExists) {
+    activeFirmId = state.firms[0] ? state.firms[0].id : null;
+  }
 }
 
 async function refreshAndRender() {
