@@ -350,7 +350,12 @@ async function saveFirm() {
     .filter(r => document.getElementById('rep_' + r.key).checked)
     .map(r => r.key);
 
-  const { data: firm, error } = await sb.from('firms').insert({
+  // Pre-generate the firm id so we don't need to SELECT it back
+  // before the creator's firm_members row exists (RLS would block that read).
+  const firmId = crypto.randomUUID();
+
+  const { error: firmErr } = await sb.from('firms').insert({
+    id: firmId,
     name,
     stir: document.getElementById('f_stir').value.trim(),
     phone: document.getElementById('f_phone').value.trim(),
@@ -358,22 +363,25 @@ async function saveFirm() {
     regime: document.getElementById('f_regime').value,
     report_keys: reportKeys,
     created_by: currentUser.id
-  }).select().single();
+  });
 
-  if (error) { alert('Xatolik: ' + error.message); return; }
+  if (firmErr) { alert('Xatolik (firma): ' + firmErr.message); return; }
 
   // Creator becomes buxgalter of the new firm
-  await sb.from('firm_members').insert({ firm_id: firm.id, user_id: currentUser.id, role_in_firm: 'buxgalter' });
+  const { error: memberErr } = await sb.from('firm_members').insert({
+    firm_id: firmId, user_id: currentUser.id, role_in_firm: 'buxgalter'
+  });
+  if (memberErr) { alert('Xatolik (a\'zolik): ' + memberErr.message); return; }
 
   // Auto-create reports for selected keys
   const now = currentMonth();
   const reportRows = reportKeys.map(key => {
     const catalog = REPORT_CATALOG.find(r => r.key === key);
-    return catalog ? { firm_id: firm.id, type: catalog.label, due_date: now + '-20', status: 'Kutilmoqda' } : null;
+    return catalog ? { firm_id: firmId, type: catalog.label, due_date: now + '-20', status: 'Kutilmoqda' } : null;
   }).filter(Boolean);
   if (reportRows.length) await sb.from('reports').insert(reportRows);
 
-  activeFirmId = firm.id;
+  activeFirmId = firmId;
   closeModal();
   await refreshAndRender();
 }
