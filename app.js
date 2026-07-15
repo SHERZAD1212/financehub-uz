@@ -77,6 +77,16 @@ function fmt(n) {
   return Math.abs(Math.round(n)).toLocaleString('ru-RU') + ' so\'m';
 }
 
+function formatAmountInput(el) {
+  const raw = el.value.replace(/\D/g, '');
+  el.value = raw ? Number(raw).toLocaleString('ru-RU') : '';
+}
+
+function parseAmountInput(id) {
+  const raw = (document.getElementById(id)?.value || '').replace(/\D/g, '');
+  return raw ? Number(raw) : 0;
+}
+
 function fmtSign(n) {
   const abs = fmt(n);
   if (n > 0) return `<span class="amount-positive">+${abs}</span>`;
@@ -714,7 +724,7 @@ function kassaModalBody(k) {
     <div class="field-row">
       <div class="field">
         <label>Summa (so'm) *</label>
-        <input id="k_amount" type="number" placeholder="0" value="${k ? k.amount : ''}">
+        <input id="k_amount" type="text" inputmode="numeric" placeholder="0" oninput="formatAmountInput(this)" value="${k ? k.amount.toLocaleString('ru-RU') : ''}">
       </div>
       <div class="field">
         <label>To'lov usuli</label>
@@ -773,7 +783,7 @@ function openKassaEditModal(id) {
 async function saveKassa(editId, btn) {
   if (btn) { if (btn.disabled) return; btn.disabled = true; }
   try {
-  const amount = Number(document.getElementById('k_amount').value);
+  const amount = parseAmountInput('k_amount');
   if (!amount || amount <= 0) { alert('To\'g\'ri summa kiriting'); return; }
 
   const row = {
@@ -904,7 +914,7 @@ function openContragentModal(editId) {
     </div>
     <div class="field">
       <label>Shartnoma summasi</label>
-      <input id="c_amount" type="number" value="${c ? c.contractAmount : ''}" placeholder="0">
+      <input id="c_amount" type="text" inputmode="numeric" value="${c ? c.contractAmount.toLocaleString('ru-RU') : ''}" placeholder="0" oninput="formatAmountInput(this)">
     </div>
     <div class="field">
       <label>Holat</label>
@@ -933,7 +943,7 @@ async function saveContragent(editId, btn) {
     name, stir: document.getElementById('c_stir').value.trim(),
     phone: document.getElementById('c_phone').value.trim(),
     email: document.getElementById('c_email').value.trim(),
-    contract_amount: Number(document.getElementById('c_amount').value) || 0,
+    contract_amount: parseAmountInput('c_amount'),
     status: document.getElementById('c_status').value
   };
   const { error } = editId
@@ -1136,7 +1146,7 @@ function openByudjetModal() {
     </div>
     <div class="field">
       <label>Byudjet chegarasi (so'm)</label>
-      <input id="b_limit" type="number" placeholder="0">
+      <input id="b_limit" type="text" inputmode="numeric" placeholder="0" oninput="formatAmountInput(this)">
     </div>
   `;
   openModal(
@@ -1150,7 +1160,7 @@ function openByudjetModal() {
 async function saveBudget(btn) {
   if (btn) { if (btn.disabled) return; btn.disabled = true; }
   try {
-  const limit = Number(document.getElementById('b_limit').value);
+  const limit = parseAmountInput('b_limit');
   if (!limit) { alert('Summani kiriting'); return; }
   const month = document.getElementById('b_month').value;
   const category = document.getElementById('b_category').value;
@@ -1268,7 +1278,7 @@ function openFakturaModal() {
     </div>
     <div class="field">
       <label>Summa (so'm)</label>
-      <input id="inv_amount" type="number" placeholder="0">
+      <input id="inv_amount" type="text" inputmode="numeric" placeholder="0" oninput="formatAmountInput(this)">
     </div>
     <div class="field">
       <label>Tavsif</label>
@@ -1286,7 +1296,7 @@ function openFakturaModal() {
 async function saveInvoice(btn) {
   if (btn) { if (btn.disabled) return; btn.disabled = true; }
   try {
-  const amount = Number(document.getElementById('inv_amount').value);
+  const amount = parseAmountInput('inv_amount');
   if (!amount) { alert('Summani kiriting'); return; }
   const { error } = await sb.from('invoices').insert({
     firm_id: activeFirmId,
