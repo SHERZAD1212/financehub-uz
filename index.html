@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinanceHub UZ — Buxgalteriya Tizimi</title>
+<meta name="description" content="O'zbekiston uchun zamonaviy moliya va buxgalteriya boshqaruv tizimi">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Login screen -->
+<div id="loginScreen" class="login-screen">
+  <form id="loginForm" class="login-card">
+    <div class="logo" style="justify-content:center;margin-bottom:8px;">
+      <div class="logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor"/><path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name">FinanceHub</span>
+        <span class="logo-sub">UZ</span>
+      </div>
+    </div>
+    <h2>Tizimga kirish</h2>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login_email" required autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Parol</label>
+      <input type="password" id="login_password" required autocomplete="current-password">
+    </div>
+    <div id="loginError" class="login-error"></div>
+    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Kirish</button>
+  </form>
+</div>
+
+<div class="app" id="app" style="display:none;">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor"/><path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-name">FinanceHub</span>
+          <span class="logo-sub">UZ</span>
+        </div>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="firm-selector" id="firmSelector">
+      <div class="firm-label">Faol firma</div>
+      <select id="firmSelect" onchange="setActiveFirm(this.value)"></select>
+      <button class="btn-add-firm buxgalter-only" onclick="openFirmModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Firma qo'shish
+      </button>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-group">
+        <div class="nav-group-label">Asosiy</div>
+        <a class="nav-item" data-view="dashboard" onclick="showView('dashboard')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </span>
+          <span class="nav-label">Boshqaruv paneli</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Moliya</div>
+        <a class="nav-item" data-view="kassa" onclick="showView('kassa')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          </span>
+          <span class="nav-label">Kassa</span>
+        </a>
+        <a class="nav-item" data-view="debitor" onclick="showView('debitor')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+          </span>
+          <span class="nav-label">Debitor / Kreditor</span>
+        </a>
+        <a class="nav-item" data-view="byudjet" onclick="showView('byudjet')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+          <span class="nav-label">Byudjet</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Hujjatlar</div>
+        <a class="nav-item" data-view="faktura" onclick="showView('faktura')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </span>
+          <span class="nav-label">Fakturalar</span>
+        </a>
+        <a class="nav-item" data-view="kontragentlar" onclick="showView('kontragentlar')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          <span class="nav-label">Kontragentlar</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Tahlil</div>
+        <a class="nav-item" data-view="cashflow" onclick="showView('cashflow')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </span>
+          <span class="nav-label">Cash Flow</span>
+        </a>
+        <a class="nav-item" data-view="pl" onclick="showView('pl')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </span>
+          <span class="nav-label">P&L Hisobot</span>
+        </a>
+        <a class="nav-item" data-view="soliqlar" onclick="showView('soliqlar')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </span>
+          <span class="nav-label">Soliqlar</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Shaxsiy</div>
+        <a class="nav-item" data-view="hisobotlar" onclick="showView('hisobotlar')">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+          </span>
+          <span class="nav-label">Hisobotlarim</span>
+          <span class="nav-badge" id="reportsBadge"></span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="role-badge" id="roleBadge"></div>
+      <button class="btn btn-sm btn-secondary" id="logoutBtn" style="width:100%;justify-content:center;margin-top:8px;">Chiqish</button>
+      <div class="sidebar-time" id="sidebarTime"></div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h2 class="page-title" id="pageTitle">Boshqaruv paneli</h2>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-date" id="topbarDate"></div>
+        <div class="topbar-notifications" id="notifBell" onclick="toggleNotifPanel()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-dot" id="notifDot"></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Notification Panel -->
+    <div class="notif-panel" id="notifPanel">
+      <div class="notif-panel-header">Eslatmalar</div>
+      <div id="notifList"></div>
+    </div>
+
+    <!-- Views -->
+    <div class="views-container">
+
+      <!-- DASHBOARD -->
+      <section class="view" id="view-dashboard">
+        <div class="stats-grid" id="dashboardCards"></div>
+        <div class="dashboard-grid">
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <h3>Oylik Kirim / Chiqim</h3>
+              <select id="chartMonthFilter" onchange="updateChart()">
+                <option value="6">So'nggi 6 oy</option>
+                <option value="12">So'nggi 12 oy</option>
+              </select>
+            </div>
+            <div class="chart-wrap"><canvas id="cashflowChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-header"><h3>Xarajatlar tarkibi</h3></div>
+            <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
+          </div>
+        </div>
+        <div class="recent-card">
+          <div class="recent-header">
+            <h3>So'nggi tranzaksiyalar</h3>
+            <a onclick="showView('kassa')" class="see-all">Barchasini ko'rish →</a>
+          </div>
+          <div id="recentTransactions"></div>
+        </div>
+      </section>
+
+      <!-- KASSA -->
+      <section class="view" id="view-kassa">
+        <div class="stats-grid" id="kassaCards"></div>
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <div class="search-box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="kassaSearch" placeholder="Qidirish..." oninput="renderKassa()">
+            </div>
+            <select id="kassaTypeFilter" onchange="renderKassa()">
+              <option value="">Barchasi</option>
+              <option value="Kirim">Kirim</option>
+              <option value="Chiqim">Chiqim</option>
+            </select>
+            <input type="month" id="kassaMonthFilter" onchange="renderKassa()">
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-secondary" onclick="exportKassaCSV()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              CSV Export
+            </button>
+            <button class="btn btn-primary buxgalter-only" onclick="openKassaModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Tranzaksiya qo'shish
+            </button>
+          </div>
+        </div>
+        <div id="kassaWrap"></div>
+      </section>
+
+      <!-- DEBITOR -->
+      <section class="view" id="view-debitor">
+        <div class="stats-grid" id="debitorCards"></div>
+        <div id="debitorWrap"></div>
+      </section>
+
+      <!-- BYUDJET -->
+      <section class="view" id="view-byudjet">
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <input type="month" id="byudjetMonth" onchange="renderByudjet()">
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-primary buxgalter-only" onclick="openByudjetModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Byudjet belgilash
+            </button>
+          </div>
+        </div>
+        <div id="byudjetWrap"></div>
+      </section>
+
+      <!-- FAKTURA -->
+      <section class="view" id="view-faktura">
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <div class="search-box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="fakturaSearch" placeholder="Qidirish..." oninput="renderFaktura()">
+            </div>
+            <select id="fakturaFilter" onchange="renderFaktura()">
+              <option value="">Barchasi</option>
+              <option value="Kutilmoqda">Kutilmoqda</option>
+              <option value="To'langan">To'langan</option>
+              <option value="Muddati o'tgan">Muddati o'tgan</option>
+            </select>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-primary buxgalter-only" onclick="openFakturaModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Faktura yaratish
+            </button>
+          </div>
+        </div>
+        <div id="fakturaWrap"></div>
+      </section>
+
+      <!-- KONTRAGENTLAR -->
+      <section class="view" id="view-kontragentlar">
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <div class="search-box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="contSearch" placeholder="Nomi yoki STIR bo'yicha..." oninput="renderKontragentlar()">
+            </div>
+            <select id="contStatusFilter" onchange="renderKontragentlar()">
+              <option value="">Barcha holat</option>
+              <option value="Faol">Faol</option>
+              <option value="Tugagan">Tugagan</option>
+            </select>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-primary buxgalter-only" onclick="openContragentModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Kontragent qo'shish
+            </button>
+          </div>
+        </div>
+        <div id="kontragentlarWrap"></div>
+      </section>
+
+      <!-- CASH FLOW -->
+      <section class="view" id="view-cashflow">
+        <div class="chart-card" style="margin-bottom:20px;">
+          <div class="chart-card-header"><h3>Cash Flow — Oylik ko'rinish</h3></div>
+          <div class="chart-wrap"><canvas id="cashflowDetailChart"></canvas></div>
+        </div>
+        <div id="cashflowWrap"></div>
+      </section>
+
+      <!-- P&L -->
+      <section class="view" id="view-pl">
+        <div class="stats-grid" id="plCards"></div>
+        <div id="plWrap"></div>
+      </section>
+
+      <!-- SOLIQLAR -->
+      <section class="view" id="view-soliqlar">
+        <div id="soliqlarWrap"></div>
+      </section>
+
+      <!-- HISOBOTLAR -->
+      <section class="view" id="view-hisobotlar">
+        <div class="section-toolbar">
+          <div class="toolbar-left"></div>
+          <div class="toolbar-right">
+            <button class="btn btn-primary buxgalter-only" onclick="openReportModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Hisobot qo'shish
+            </button>
+          </div>
+        </div>
+        <div id="reportsWrap"></div>
+      </section>
+
+    </div><!-- /views-container -->
+  </main>
+</div>
+
+<!-- MODAL OVERLAY -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<!-- PRINT FAKTURA -->
+<div id="printArea" style="display:none;"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
