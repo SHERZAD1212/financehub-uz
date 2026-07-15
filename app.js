@@ -1487,24 +1487,33 @@ function renderCashflow() {
 // ══════════════════════════════════════════
 
 function renderPL() {
-  const kassa = state.kassa.filter(k => k.firmId === activeFirmId);
+  const monthF = document.getElementById('plMonth')?.value || '';
+  let kassa = state.kassa.filter(k => k.firmId === activeFirmId);
+  if (monthF) kassa = kassa.filter(k => k.month === monthF);
 
   if (!kassa.length) {
+    document.getElementById('plCards').innerHTML = '';
     document.getElementById('plWrap').innerHTML = emptyState('📑', 'Ma\'lumot yo\'q', 'Kassa yozuvlari asosida hisobot shakllanadi');
     return;
   }
 
-  const months = {};
-  kassa.forEach(k => {
-    if (!months[k.month]) months[k.month] = { income: 0, expense: 0 };
-    if (k.type === 'Kirim') months[k.month].income += k.amount;
-    else months[k.month].expense += k.amount;
-  });
+  const income = kassa.filter(k => k.type === 'Kirim');
+  const expense = kassa.filter(k => k.type === 'Chiqim');
 
-  const sorted = Object.keys(months).sort();
-  const totalIncome = sorted.reduce((s, m) => s + months[m].income, 0);
-  const totalExpense = sorted.reduce((s, m) => s + months[m].expense, 0);
-  const totalProfit = totalIncome - totalExpense;
+  const incomeByCategory = {};
+  income.forEach(k => { incomeByCategory[k.category] = (incomeByCategory[k.category] || 0) + k.amount; });
+
+  const expenseByCategory = {};
+  expense.forEach(k => { expenseByCategory[k.category] = (expenseByCategory[k.category] || 0) + k.amount; });
+
+  const totalIncome = income.reduce((s, k) => s + k.amount, 0);
+  const taxExpense = expenseByCategory['Soliqlar'] || 0;
+  const totalExpense = expense.reduce((s, k) => s + k.amount, 0);
+  const opexTotal = totalExpense - taxExpense;
+  const operatingProfit = totalIncome - opexTotal;
+  const netProfit = operatingProfit - taxExpense;
+  const operatingMargin = totalIncome > 0 ? (operatingProfit / totalIncome) * 100 : null;
+  const netMargin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : null;
 
   document.getElementById('plCards').innerHTML = `
     <div class="stat-card success">
@@ -1514,41 +1523,77 @@ function renderPL() {
     </div>
     <div class="stat-card danger">
       <div class="stat-icon danger">💸</div>
-      <div class="stat-label">Jami harajat</div>
-      <div class="stat-value">${fmt(totalExpense)}</div>
+      <div class="stat-label">Operatsion xarajatlar</div>
+      <div class="stat-value">${fmt(opexTotal)}</div>
     </div>
-    <div class="stat-card ${totalProfit >= 0 ? 'success' : 'danger'}">
-      <div class="stat-icon ${totalProfit >= 0 ? 'success' : 'danger'}">${totalProfit >= 0 ? '📈' : '📉'}</div>
+    <div class="stat-card ${operatingProfit >= 0 ? 'success' : 'danger'}">
+      <div class="stat-icon ${operatingProfit >= 0 ? 'success' : 'danger'}">${operatingProfit >= 0 ? '📈' : '📉'}</div>
+      <div class="stat-label">Operativ foyda</div>
+      <div class="stat-value">${fmt(operatingProfit)}</div>
+      <div class="stat-change ${operatingProfit >= 0 ? 'up' : 'down'}">${operatingMargin !== null ? operatingMargin.toFixed(1) + '% marja' : '—'}</div>
+    </div>
+    <div class="stat-card warning">
+      <div class="stat-icon warning">🧾</div>
+      <div class="stat-label">Soliqlar</div>
+      <div class="stat-value">${fmt(taxExpense)}</div>
+    </div>
+    <div class="stat-card ${netProfit >= 0 ? 'success' : 'danger'}">
+      <div class="stat-icon ${netProfit >= 0 ? 'success' : 'danger'}">${netProfit >= 0 ? '📈' : '📉'}</div>
       <div class="stat-label">Sof foyda / zarar</div>
-      <div class="stat-value">${fmt(totalProfit)}</div>
-    </div>
-    <div class="stat-card accent">
-      <div class="stat-icon accent">%</div>
-      <div class="stat-label">Rentabellik</div>
-      <div class="stat-value">${totalIncome > 0 ? ((totalProfit / totalIncome) * 100).toFixed(1) + '%' : '—'}</div>
+      <div class="stat-value">${fmt(netProfit)}</div>
+      <div class="stat-change ${netProfit >= 0 ? 'up' : 'down'}">${netMargin !== null ? netMargin.toFixed(1) + '% marja' : '—'}</div>
     </div>
   `;
+
+  const pct = n => totalIncome > 0 ? (n / totalIncome * 100).toFixed(1) + '%' : '—';
+  const sectionRow = label => `<tr style="background:var(--bg-3)"><td colspan="3" style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;padding-top:14px;padding-bottom:8px">${label}</td></tr>`;
+  const totalRow = (label, amount) => `
+    <tr style="border-top:1px solid var(--border)">
+      <td><strong>${label}</strong></td>
+      <td><strong>${fmtSign(amount)}</strong></td>
+      <td><strong>${pct(amount)}</strong></td>
+    </tr>`;
+
+  const incomeRows = Object.entries(incomeByCategory).sort((a, b) => b[1] - a[1]);
+  const expenseRows = Object.entries(expenseByCategory).filter(([cat]) => cat !== 'Soliqlar').sort((a, b) => b[1] - a[1]);
 
   document.getElementById('plWrap').innerHTML = `
     <div class="table-wrap">
       <table>
-        <thead>
-          <tr><th>Oy</th><th>Daromad</th><th>Harajat</th><th>Foyda / Zarar</th><th>Marja</th></tr>
-        </thead>
+        <thead><tr><th>Bo'lim</th><th>Summa</th><th>Daromaddan ulushi</th></tr></thead>
         <tbody>
-          ${sorted.map(m => {
-    const profit = months[m].income - months[m].expense;
-    const margin = months[m].income > 0 ? ((profit / months[m].income) * 100).toFixed(1) : 0;
-    return `
-              <tr>
-                <td><strong>${monthLabel(m)}</strong></td>
-                <td class="amount-positive">+${fmt(months[m].income)}</td>
-                <td class="amount-negative">−${fmt(months[m].expense)}</td>
-                <td>${fmtSign(profit)}</td>
-                <td><span class="badge ${profit >= 0 ? 'success' : 'danger'}">${margin}%</span></td>
-              </tr>
-            `;
-  }).join('')}
+          ${sectionRow('Daromadlar')}
+          ${incomeRows.map(([cat, amt]) => `
+            <tr>
+              <td>${escHtml(cat)}</td>
+              <td class="amount-positive">+${fmt(amt)}</td>
+              <td>${pct(amt)}</td>
+            </tr>`).join('')}
+          ${totalRow('Jami daromad', totalIncome)}
+
+          ${sectionRow('Operatsion xarajatlar (tannarx)')}
+          ${expenseRows.length ? expenseRows.map(([cat, amt]) => `
+            <tr>
+              <td>${escHtml(cat)}</td>
+              <td class="amount-negative">−${fmt(amt)}</td>
+              <td>${pct(amt)}</td>
+            </tr>`).join('') : `<tr><td colspan="3" style="color:var(--text-muted)">Xarajat yo'q</td></tr>`}
+          ${totalRow('Jami operatsion xarajat', -opexTotal)}
+
+          ${totalRow('Operativ foyda (EBIT)', operatingProfit)}
+
+          ${sectionRow('Soliqlar')}
+          <tr>
+            <td>Soliqlar bo'yicha xarajat</td>
+            <td class="amount-negative">${taxExpense ? '−' + fmt(taxExpense) : fmt(0)}</td>
+            <td>${pct(taxExpense)}</td>
+          </tr>
+
+          <tr style="border-top:2px solid var(--border);background:var(--bg-3)">
+            <td style="font-size:14px"><strong>SOF FOYDA / ZARAR</strong></td>
+            <td style="font-size:14px"><strong>${fmtSign(netProfit)}</strong></td>
+            <td style="font-size:14px"><strong>${pct(netProfit)}</strong></td>
+          </tr>
         </tbody>
       </table>
     </div>
