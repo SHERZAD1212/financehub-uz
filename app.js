@@ -41,10 +41,14 @@ const CATEGORIES = {
 
 const REPORT_CATALOG = [
   { key: 'qqs', label: 'QQS hisoboti', freq: 'Oylik', rate: 0.12, tax: true },
-  { key: 'ijtimoiy', label: 'Ijtimoiy soliq', freq: 'Oylik', rate: 0.12, tax: true },
   { key: 'foyda', label: 'Foyda solig\'i', freq: 'Choraklik', rate: 0.15, tax: true },
-  { key: 'statistika', label: 'Statistika hisoboti', freq: 'Choraklik', rate: 0, tax: false },
-  { key: 'pensiya', label: 'Pensiya fondi', freq: 'Oylik', rate: 0.25, tax: true }
+  { key: 'daromad', label: 'Jismoniy shaxslar daromad solig\'i (agent)', freq: 'Oylik', rate: 0.12, tax: true },
+  { key: 'ijtimoiy', label: 'Ijtimoiy soliq', freq: 'Oylik', rate: 0.12, tax: true },
+  { key: 'aylanma', label: 'Aylanmadan olinadigan soliq', freq: 'Oylik', rate: 0.04, tax: true },
+  { key: 'molmulk', label: 'Yuridik shaxslar mol-mulk solig\'i', freq: 'Choraklik', rate: 0, tax: false },
+  { key: 'yer', label: 'Yer solig\'i', freq: 'Yillik', rate: 0, tax: false },
+  { key: 'suv', label: 'Suv resurslaridan foydalanganlik uchun soliq', freq: 'Oylik', rate: 0, tax: false },
+  { key: 'statistika', label: 'Statistika hisoboti', freq: 'Choraklik', rate: 0, tax: false }
 ];
 
 const PAGE_TITLES = {
