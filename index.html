@@ -321,6 +321,14 @@
 
       <!-- P&L -->
       <section class="view" id="view-pl">
+        <div class="section-toolbar">
+          <div class="toolbar-left">
+            <input type="month" id="plMonth" onchange="renderPL()">
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-secondary" onclick="document.getElementById('plMonth').value='';renderPL()">Barcha davr</button>
+          </div>
+        </div>
         <div class="stats-grid" id="plCards"></div>
         <div id="plWrap"></div>
       </section>
