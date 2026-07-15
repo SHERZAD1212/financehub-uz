@@ -228,7 +228,7 @@ function getNotifications() {
   const notifs = [];
   const todayStr = today();
 
-  state.reports.forEach(r => {
+  state.reports.filter(r => r.firmId === activeFirmId).forEach(r => {
     if (r.status === 'Topshirilgan') return;
     const days = daysUntil(r.dueDate);
     if (days !== null && days <= 5 && days >= 0) {
@@ -1613,7 +1613,7 @@ function renderSoliqlar() {
 
 function renderReports() {
   const todayStr = today();
-  const list = [...state.reports].sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+  const list = state.reports.filter(r => r.firmId === activeFirmId).sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
 
   if (!list.length) {
     document.getElementById('reportsWrap').innerHTML = emptyState('📄', 'Hisobot yo\'q', 'Yangi hisobot qo\'shish uchun tugmani bosing');
@@ -1623,7 +1623,7 @@ function renderReports() {
   document.getElementById('reportsWrap').innerHTML = `
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Firma</th><th>Hisobot turi</th><th>Topshirish muddati</th><th>Qolgan kun</th><th>Holat</th><th></th></tr></thead>
+        <thead><tr><th>Hisobot turi</th><th>Topshirish muddati</th><th>Qolgan kun</th><th>Holat</th><th></th></tr></thead>
         <tbody>
           ${list.map(r => {
     const days = daysUntil(r.dueDate);
@@ -1633,7 +1633,6 @@ function renderReports() {
     const daysLabel = r.status === 'Topshirilgan' ? '—' : days === null ? '—' : days < 0 ? `${Math.abs(days)} kun o'tdi` : `${days} kun`;
     return `
               <tr>
-                <td>${escHtml(firmName(r.firmId))}</td>
                 <td><strong>${escHtml(r.type)}</strong></td>
                 <td>${formatDate(r.dueDate)}</td>
                 <td style="color:${overdue ? 'var(--danger-light)' : days !== null && days <= 5 ? 'var(--warning-light)' : 'var(--text-muted)'}">${daysLabel}</td>
@@ -1655,17 +1654,12 @@ function renderReports() {
   `;
 }
 
-function firmName(id) {
-  const f = state.firms.find(x => x.id === id);
-  return f ? f.name : '—';
-}
-
 function openReportModal() {
   const body = `
     <div class="field">
       <label>Firma</label>
       <select id="r_firm">
-        ${state.firms.map(f => `<option value="${f.id}">${escHtml(f.name)}</option>`).join('')}
+        ${state.firms.map(f => `<option value="${f.id}" ${f.id === activeFirmId ? 'selected' : ''}>${escHtml(f.name)}</option>`).join('')}
       </select>
     </div>
     <div class="field">
