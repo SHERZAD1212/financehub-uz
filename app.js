@@ -338,16 +338,18 @@ function openFirmModal() {
     'Yangi firma qo\'shish',
     body,
     `<button class="btn btn-secondary" onclick="closeModal()">Bekor qilish</button>
-     <button class="btn btn-primary" onclick="saveFirm()">Saqlash</button>`
+     <button class="btn btn-primary" onclick="saveFirm(this)">Saqlash</button>`
   );
 }
 
-async function saveFirm() {
-  const name = document.getElementById('f_name').value.trim();
-  if (!name) { alert('Firma nomini kiriting'); return; }
+async function saveFirm(btn) {
+  if (btn) { if (btn.disabled) return; btn.disabled = true; }
+  try {
+    const name = document.getElementById('f_name').value.trim();
+    if (!name) { alert('Firma nomini kiriting'); return; }
 
-  const reportKeys = REPORT_CATALOG
-    .filter(r => document.getElementById('rep_' + r.key).checked)
+    const reportKeys = REPORT_CATALOG
+      .filter(r => document.getElementById('rep_' + r.key).checked)
     .map(r => r.key);
 
   // Pre-generate the firm id so we don't need to SELECT it back
@@ -384,6 +386,9 @@ async function saveFirm() {
   activeFirmId = firmId;
   closeModal();
   await refreshAndRender();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 // ══════════════════════════════════════════
@@ -747,7 +752,7 @@ function openKassaModal() {
     'Tranzaksiya qo\'shish',
     kassaModalBody(null),
     `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
-     <button class="btn btn-primary" onclick="saveKassa('')">Saqlash</button>`
+     <button class="btn btn-primary" onclick="saveKassa('', this)">Saqlash</button>`
   );
 }
 
@@ -758,11 +763,13 @@ function openKassaEditModal(id) {
     'Tranzaksiyani tahrirlash',
     kassaModalBody(k),
     `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
-     <button class="btn btn-primary" onclick="saveKassa('${id}')">Saqlash</button>`
+     <button class="btn btn-primary" onclick="saveKassa('${id}', this)">Saqlash</button>`
   );
 }
 
-async function saveKassa(editId) {
+async function saveKassa(editId, btn) {
+  if (btn) { if (btn.disabled) return; btn.disabled = true; }
+  try {
   const amount = Number(document.getElementById('k_amount').value);
   if (!amount || amount <= 0) { alert('To\'g\'ri summa kiriting'); return; }
 
@@ -785,6 +792,9 @@ async function saveKassa(editId) {
   if (error) { alert('Xatolik: ' + error.message); return; }
   closeModal();
   await refreshAndRender();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function deleteKassa(id) {
@@ -907,11 +917,13 @@ function openContragentModal(editId) {
     c ? 'Kontragentni tahrirlash' : 'Kontragent qo\'shish',
     body,
     `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
-     <button class="btn btn-primary" onclick="saveContragent('${editId || ''}')">Saqlash</button>`
+     <button class="btn btn-primary" onclick="saveContragent('${editId || ''}', this)">Saqlash</button>`
   );
 }
 
-async function saveContragent(editId) {
+async function saveContragent(editId, btn) {
+  if (btn) { if (btn.disabled) return; btn.disabled = true; }
+  try {
   const name = document.getElementById('c_name').value.trim();
   if (!name) { alert('Nomni kiriting'); return; }
   const row = {
@@ -928,6 +940,9 @@ async function saveContragent(editId) {
   if (error) { alert('Xatolik: ' + error.message); return; }
   closeModal();
   await refreshAndRender();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function deleteContragent(id) {
@@ -1125,11 +1140,13 @@ function openByudjetModal() {
     'Byudjet belgilash',
     body,
     `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
-     <button class="btn btn-primary" onclick="saveBudget()">Saqlash</button>`
+     <button class="btn btn-primary" onclick="saveBudget(this)">Saqlash</button>`
   );
 }
 
-async function saveBudget() {
+async function saveBudget(btn) {
+  if (btn) { if (btn.disabled) return; btn.disabled = true; }
+  try {
   const limit = Number(document.getElementById('b_limit').value);
   if (!limit) { alert('Summani kiriting'); return; }
   const month = document.getElementById('b_month').value;
@@ -1143,6 +1160,9 @@ async function saveBudget() {
   if (error) { alert('Xatolik: ' + error.message); return; }
   closeModal();
   await refreshAndRender();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function deleteBudget(id) {
@@ -1256,11 +1276,13 @@ function openFakturaModal() {
     'Faktura yaratish',
     body,
     `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
-     <button class="btn btn-primary" onclick="saveInvoice()">Yaratish</button>`
+     <button class="btn btn-primary" onclick="saveInvoice(this)">Yaratish</button>`
   );
 }
 
-async function saveInvoice() {
+async function saveInvoice(btn) {
+  if (btn) { if (btn.disabled) return; btn.disabled = true; }
+  try {
   const amount = Number(document.getElementById('inv_amount').value);
   if (!amount) { alert('Summani kiriting'); return; }
   const { error } = await sb.from('invoices').insert({
@@ -1276,6 +1298,9 @@ async function saveInvoice() {
   if (error) { alert('Xatolik: ' + error.message); return; }
   closeModal();
   await refreshAndRender();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function markInvoicePaid(id) {
@@ -1656,11 +1681,13 @@ function openReportModal() {
     'Hisobot qo\'shish',
     body,
     `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
-     <button class="btn btn-primary" onclick="saveReport()">Saqlash</button>`
+     <button class="btn btn-primary" onclick="saveReport(this)">Saqlash</button>`
   );
 }
 
-async function saveReport() {
+async function saveReport(btn) {
+  if (btn) { if (btn.disabled) return; btn.disabled = true; }
+  try {
   const type = document.getElementById('r_type').value.trim();
   if (!type) { alert('Hisobot turini kiriting'); return; }
   const { error } = await sb.from('reports').insert({
@@ -1670,6 +1697,9 @@ async function saveReport() {
   if (error) { alert('Xatolik: ' + error.message); return; }
   closeModal();
   await refreshAndRender();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function toggleReport(id) {
