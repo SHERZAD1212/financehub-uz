@@ -1669,6 +1669,45 @@ function renderSoliqlar() {
 // HISOBOTLAR
 // ══════════════════════════════════════════
 
+async function ensureUpcomingReports() {
+  if (!canEdit()) return;
+  const firm = state.firms.find(f => f.id === activeFirmId);
+  const keys = firm && firm.reportKeys || [];
+  if (!keys.length) return;
+
+  const existing = state.reports.filter(r => r.firmId === activeFirmId);
+  const now = new Date();
+
+  const dueDate = (freq, offset) => {
+    if (freq === 'Oylik') {
+      return new Date(now.getFullYear(), now.getMonth() + offset, 20).toISOString().slice(0, 10);
+    }
+    if (freq === 'Choraklik') {
+      const curQ = Math.floor(now.getMonth() / 3);
+      return new Date(now.getFullYear(), curQ * 3 + 3 + offset * 3, 20).toISOString().slice(0, 10);
+    }
+    return new Date(now.getFullYear() + offset, 1, 20).toISOString().slice(0, 10);
+  };
+
+  const toInsert = [];
+  keys.forEach(key => {
+    const cat = REPORT_CATALOG.find(r => r.key === key);
+    if (!cat) return;
+    const offsets = cat.freq === 'Oylik' ? [0, 1, 2] : cat.freq === 'Choraklik' ? [0, 1] : [0];
+    offsets.forEach(offset => {
+      const due = dueDate(cat.freq, offset);
+      const already = existing.some(r => r.type === cat.label && r.dueDate === due) ||
+        toInsert.some(r => r.type === cat.label && r.due_date === due);
+      if (!already) toInsert.push({ firm_id: activeFirmId, type: cat.label, due_date: due, status: 'Kutilmoqda' });
+    });
+  });
+
+  if (toInsert.length) {
+    await sb.from('reports').insert(toInsert);
+    await refreshAndRender();
+  }
+}
+
 function renderReports() {
   const todayStr = today();
   const list = state.reports.filter(r => r.firmId === activeFirmId);
@@ -1711,7 +1750,13 @@ function renderReports() {
             `;
   };
 
-  document.getElementById('reportsWrap').innerHTML = months.map(m => {
+  const notice = `
+    <div style="margin-bottom:16px;padding:12px 16px;background:var(--warning-bg);border-radius:var(--radius-md);font-size:12.5px;color:var(--warning-light)">
+      ⚠️ Kelgusi oy/chorak/yil uchun hisobotlar avtomatik taxminiy muddat bilan yaratiladi (har oyning 20-sanasi). Aniq muddatlarni soliq idorasi jadvali bilan tekshiring.
+    </div>
+  `;
+
+  document.getElementById('reportsWrap').innerHTML = notice + months.map(m => {
     const rows = byMonth[m].sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
     const pending = rows.filter(r => r.status !== 'Topshirilgan').length;
     return `
@@ -1845,7 +1890,7 @@ function renderAll() {
     case 'cashflow': renderCashflow(); break;
     case 'pl': renderPL(); break;
     case 'soliqlar': renderSoliqlar(); break;
-    case 'hisobotlar': renderReports(); break;
+    case 'hisobotlar': renderReports(); ensureUpcomingReports(); break;
   }
 }
 
