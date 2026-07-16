@@ -1671,19 +1671,23 @@ function renderSoliqlar() {
 
 function renderReports() {
   const todayStr = today();
-  const list = state.reports.filter(r => r.firmId === activeFirmId).sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+  const list = state.reports.filter(r => r.firmId === activeFirmId);
 
   if (!list.length) {
     document.getElementById('reportsWrap').innerHTML = emptyState('📄', 'Hisobot yo\'q', 'Yangi hisobot qo\'shish uchun tugmani bosing');
     return;
   }
 
-  document.getElementById('reportsWrap').innerHTML = `
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Hisobot turi</th><th>Topshirish muddati</th><th>Qolgan kun</th><th>Holat</th><th></th></tr></thead>
-        <tbody>
-          ${list.map(r => {
+  const byMonth = {};
+  list.forEach(r => {
+    const m = r.dueDate ? r.dueDate.slice(0, 7) : 'Boshqa';
+    if (!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(r);
+  });
+
+  const months = Object.keys(byMonth).sort();
+
+  const row = r => {
     const days = daysUntil(r.dueDate);
     const overdue = r.status !== 'Topshirilgan' && r.dueDate && r.dueDate < todayStr;
     const cls = r.status === 'Topshirilgan' ? 'success' : overdue ? 'danger' : days !== null && days <= 5 ? 'warning' : 'info';
@@ -1705,11 +1709,26 @@ function renderReports() {
                 </td>
               </tr>
             `;
-  }).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
+  };
+
+  document.getElementById('reportsWrap').innerHTML = months.map(m => {
+    const rows = byMonth[m].sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+    const pending = rows.filter(r => r.status !== 'Topshirilgan').length;
+    return `
+      <div class="chart-card" style="margin-bottom:16px;padding:0;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--bg-3)">
+          <strong style="font-size:14px">${m === 'Boshqa' ? 'Muddati belgilanmagan' : monthLabel(m)}</strong>
+          <span class="badge ${pending ? 'warning' : 'success'}">${pending ? pending + ' ta kutilmoqda' : 'Barchasi topshirilgan'}</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Hisobot turi</th><th>Topshirish muddati</th><th>Qolgan kun</th><th>Holat</th><th></th></tr></thead>
+            <tbody>${rows.map(row).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function openReportModal() {
