@@ -137,6 +137,14 @@
           <span class="nav-label">Kontragentlar</span>
         </a>
       </div>
+
+      <div class="nav-group buxgalter-only">
+        <div class="nav-group-label">Administrator</div>
+        <a class="nav-item" data-view="admin" onclick="showView('admin')">
+          <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <span class="nav-label">Admin panel</span>
+        </a>
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -420,6 +428,11 @@
           </div>
         </div>
         <div id="kontragentlarWrap"></div>
+      </section>
+
+      <!-- ADMIN PANEL -->
+      <section class="view" id="view-admin">
+        <div id="adminWrap"></div>
       </section>
 
     </div><!-- /views-container -->

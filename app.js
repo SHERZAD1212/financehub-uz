@@ -69,7 +69,8 @@ const PAGE_TITLES = {
   hisobotlar: 'Hisobot muddatlari',
   kategoriyalar: 'Kategoriyalar',
   hisoblar: 'Hisoblar / Bank',
-  kontragentlar: 'Kontragentlar'
+  kontragentlar: 'Kontragentlar',
+  admin: 'Admin panel'
 };
 
 // Topshiriladigan davlat hisobotlari ro'yxati (muddat kuzatuvi uchun)
@@ -1996,6 +1997,179 @@ async function deleteReport(id) {
 }
 
 // ══════════════════════════════════════════
+// ADMIN PANEL (firmalar + hisobotlar bazasi)
+// ══════════════════════════════════════════
+
+function renderAdmin() {
+  const wrap = document.getElementById('adminWrap');
+  const todayStr = today();
+  const reports = firmReports().sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+  const firm = state.firms.find(f => f.id === activeFirmId);
+
+  wrap.innerHTML = `
+    <!-- FIRMALAR -->
+    <div class="chart-card" style="padding:0;overflow:hidden;margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--bg-3)">
+        <strong style="font-size:15px">🏢 Firmalar</strong>
+        <button class="btn btn-primary btn-sm buxgalter-only" onclick="openFirmModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Firma qo'shish
+        </button>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Nomi</th><th>STIR</th><th>Soliq rejimi</th><th>Sizning rolingiz</th><th></th></tr></thead>
+        <tbody>${state.firms.map(f => {
+          const role = roleForFirm(f.id);
+          return `<tr>
+            <td><strong>${escHtml(f.name)}</strong>${f.id === activeFirmId ? ' <span class="badge success">faol</span>' : ''}</td>
+            <td>${escHtml(f.stir) || '—'}</td>
+            <td>${escHtml(f.regime) || '—'}</td>
+            <td><span class="badge ${role === 'buxgalter' ? 'success' : 'muted'}">${role === 'buxgalter' ? 'Buxgalter' : 'Direktor'}</span></td>
+            <td><div class="row-actions">
+              <button class="btn btn-sm btn-secondary" onclick="setActiveFirm('${f.id}')">Tanlash</button>
+              <button class="btn btn-sm btn-secondary buxgalter-only" onclick="openFirmEditModal('${f.id}')">✏️</button>
+              <button class="btn btn-sm btn-danger buxgalter-only" onclick="deleteFirm('${f.id}')">🗑</button>
+            </div></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>
+
+    <!-- HISOBOTLAR BAZASI -->
+    <div class="chart-card" style="padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--bg-3);flex-wrap:wrap;gap:8px">
+        <strong style="font-size:15px">📋 Hisobotlar bazasi — ${escHtml(firm ? firm.name : '')}</strong>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary btn-sm buxgalter-only" onclick="openReportSettingsModal()">⚙️ Turlarni tanlash</button>
+          <button class="btn btn-primary btn-sm buxgalter-only" onclick="openReportEditModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Hisobot qo'shish
+          </button>
+        </div>
+      </div>
+      ${reports.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Hisobot turi</th><th>Muddat</th><th>Holat</th><th></th></tr></thead>
+        <tbody>${reports.map(r => {
+          const st = reportState(r, todayStr);
+          const cls = st === 'done' ? 'success' : st === 'overdue' ? 'danger' : 'warning';
+          const label = st === 'done' ? 'Topshirilgan' : st === 'overdue' ? 'Muddati o\'tgan' : 'Kutilmoqda';
+          return `<tr>
+            <td><strong>${escHtml(r.type)}</strong></td>
+            <td>${formatDate(r.dueDate)}</td>
+            <td><span class="badge ${cls}">${label}</span></td>
+            <td><div class="row-actions">
+              <button class="btn btn-sm btn-secondary buxgalter-only" onclick="openReportEditModal('${r.id}')">✏️ Muddat</button>
+              <button class="btn btn-sm buxgalter-only btn-${st === 'done' ? 'secondary' : 'success'}" onclick="toggleReport('${r.id}')">${st === 'done' ? '↩' : '✓'}</button>
+              <button class="btn btn-sm btn-danger buxgalter-only" onclick="deleteReport('${r.id}')">🗑</button>
+            </div></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>` :
+      `<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px">Hali hisobot yo'q. "Turlarni tanlash" yoki "Hisobot qo'shish" orqali kiriting.</div>`}
+    </div>`;
+}
+
+async function deleteFirm(id) {
+  const firm = state.firms.find(f => f.id === id);
+  if (!firm) return;
+  if (state.firms.length <= 1) { toast('Oxirgi firmani o\'chirib bo\'lmaydi', 'warning'); return; }
+  const ok = await confirmDialog(
+    `"${firm.name}" firmasini VA uning BARCHA ma'lumotlarini (kassa, operatsiyalar, hisobotlar...) butunlay o'chirasizmi? Bu amalni QAYTARIB BO'LMAYDI.`,
+    { okText: 'Ha, butunlay o\'chirish' });
+  if (!ok) return;
+
+  // Bola yozuvlarni oldin tozalaymiz (FK cheklovlaridan qochish uchun)
+  for (const t of ['reports', 'budgets', 'firm_members']) {
+    await sb.from(t).delete().eq('firm_id', id).then(() => {}, () => {});
+  }
+  const { error } = await sb.from('firms').delete().eq('id', id);
+  if (error) { toast('O\'chirishda xatolik: ' + error.message, 'error', 6000); return; }
+
+  if (activeFirmId === id) activeFirmId = null;
+  toast('Firma o\'chirildi', 'success');
+  await refreshAndRender();
+}
+
+// Firma ma'lumotlarini tahrirlash
+function openFirmEditModal(id) {
+  const f = state.firms.find(x => x.id === id);
+  if (!f) return;
+  openModal('Firmani tahrirlash', `
+    <div class="field-row">
+      <div class="field"><label>Firma nomi *</label><input id="fe_name" value="${escHtml(f.name)}"></div>
+      <div class="field"><label>STIR</label><input id="fe_stir" value="${escHtml(f.stir)}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Telefon</label><input id="fe_phone" value="${escHtml(f.phone)}"></div>
+      <div class="field"><label>Soliq rejimi</label><select id="fe_regime">
+        ${['QQS to\'lovchi', 'Aylanma soliq', 'Yagona soliq to\'lovchi', 'Oddiy deklaratsiya']
+          .map(r => `<option ${f.regime === r ? 'selected' : ''}>${r}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="field"><label>Manzil</label><input id="fe_address" value="${escHtml(f.address)}"></div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="saveFirmEdit('${id}', this)">Saqlash</button>`);
+}
+
+async function saveFirmEdit(id, btn) {
+  const name = document.getElementById('fe_name').value.trim();
+  if (!name) { toast('Firma nomini kiriting', 'warning'); return; }
+  setBtnLoading(btn, true);
+  try {
+    const { error } = await sb.from('firms').update({
+      name,
+      stir: document.getElementById('fe_stir').value.trim(),
+      phone: document.getElementById('fe_phone').value.trim(),
+      address: document.getElementById('fe_address').value.trim(),
+      regime: document.getElementById('fe_regime').value
+    }).eq('id', id);
+    if (error) { toast('Xatolik: ' + error.message, 'error'); return; }
+    closeModal();
+    toast('Firma yangilandi', 'success');
+    await refreshAndRender();
+  } finally { setBtnLoading(btn, false); }
+}
+
+// Hisobot qo'shish / muddatini o'zgartirish (bitta modal)
+function openReportEditModal(editId) {
+  const r = editId ? state.reports.find(x => x.id === editId) : null;
+  openModal(r ? 'Hisobot muddatini o\'zgartirish' : 'Hisobot qo\'shish', `
+    <div class="field"><label>Hisobot turi *</label>
+      <input id="r_type" value="${r ? escHtml(r.type) : ''}" placeholder="Masalan: QQS hisoboti" list="reportCatalog">
+      <datalist id="reportCatalog">${REPORT_CATALOG.map(x => `<option value="${escHtml(x.label)}">`).join('')}</datalist></div>
+    <div class="field-row">
+      <div class="field"><label>Topshirish muddati</label>
+        <input id="r_due" type="date" value="${r ? String(r.dueDate).slice(0, 10) : ''}"></div>
+      <div class="field"><label>Holat</label><select id="r_status">
+        <option value="Kutilmoqda" ${!r || r.status !== 'Topshirilgan' ? 'selected' : ''}>Kutilmoqda</option>
+        <option value="Topshirilgan" ${r && r.status === 'Topshirilgan' ? 'selected' : ''}>Topshirilgan</option>
+      </select></div>
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="saveReportEdit('${editId || ''}', this)">Saqlash</button>`);
+}
+
+async function saveReportEdit(editId, btn) {
+  const type = document.getElementById('r_type').value.trim();
+  if (!type) { toast('Hisobot turini kiriting', 'warning'); return; }
+  const row = {
+    type,
+    due_date: document.getElementById('r_due').value || null,
+    status: document.getElementById('r_status').value
+  };
+  setBtnLoading(btn, true);
+  try {
+    const { error } = editId
+      ? await sb.from('reports').update(row).eq('id', editId)
+      : await sb.from('reports').insert({ firm_id: activeFirmId, ...row });
+    if (error) { toast('Xatolik: ' + error.message, 'error'); return; }
+    closeModal();
+    toast(editId ? 'Muddat yangilandi' : 'Hisobot qo\'shildi', 'success');
+    await refreshAndRender();
+  } finally { setBtnLoading(btn, false); }
+}
+
+// ══════════════════════════════════════════
 // BYUDJET
 // ══════════════════════════════════════════
 
@@ -2358,6 +2532,7 @@ function renderAll() {
     case 'kategoriyalar': renderKategoriyalar(); break;
     case 'hisoblar': renderHisoblar(); break;
     case 'kontragentlar': renderKontragentlar(); break;
+    case 'admin': renderAdmin(); break;
   }
 }
 
