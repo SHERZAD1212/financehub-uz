@@ -479,12 +479,16 @@ body {
   background: var(--gradient-glow);
 }
 
-.view { display: none; animation: fadeIn 0.25s ease; }
-.view.active { display: block; }
+.view { display: none; }
+.view.active { display: block; animation: viewIn 0.38s cubic-bezier(0.16, 1, 0.3, 1); }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ── Stats Grid ── */
@@ -701,6 +705,17 @@ body {
 }
 .section-toolbar select:focus,
 .section-toolbar input:focus { border-color: var(--accent); }
+
+/* ── Source hint (P/L vs Cash Flow basis) ── */
+.source-hint {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  background: var(--info-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 9px 14px;
+  margin-bottom: 16px;
+}
 
 /* ── Date range field ── */
 .range-field { display: flex; align-items: center; gap: 6px; }
@@ -1318,4 +1333,100 @@ body.role-direktor .buxgalter-only { display: none !important; }
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
+}
+
+/* ══════════════════════════════════════════
+   ANIMATSIYALAR — mayda interaktsiyalar
+   ══════════════════════════════════════════ */
+
+/* Tugma bosilishi */
+.btn:active:not(.is-loading) { transform: translateY(1px) scale(0.98); }
+.btn { transition: background var(--transition), color var(--transition), box-shadow var(--transition), transform 0.08s ease, border-color var(--transition); }
+
+/* Nav elementi hover — yengil siljish */
+.nav-item { transition: background var(--transition), color var(--transition), transform 0.15s ease; }
+.nav-item:hover:not(.active) { transform: translateX(3px); }
+
+/* Stat karta — ikonka jonlanishi */
+.stat-icon { transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.stat-card:hover .stat-icon { transform: scale(1.1) rotate(-3deg); }
+.stat-value { transition: color var(--transition); }
+
+/* Chart / recent / budget kartalar hover */
+.chart-card, .recent-card, .budget-item {
+  transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+}
+.chart-card:hover, .recent-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.budget-item:hover { border-color: rgba(16,24,40,0.12); }
+
+/* Jadval qatori amal tugmalari */
+.row-actions .btn { transition: transform 0.12s ease, background var(--transition), color var(--transition); }
+.row-actions .btn:hover { transform: translateY(-1px); }
+
+/* Badge yengil hover */
+.badge { transition: transform 0.12s ease; }
+tbody tr:hover .badge { transform: scale(1.04); }
+
+/* Firma-select / search fokus */
+.search-box, .field input, .field select, .field textarea { transition: border-color var(--transition), box-shadow var(--transition); }
+
+/* Modal ichidagi maydonlar ketma-ket kirishi */
+@keyframes fieldIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.modal-body .field, .modal-body .field-row {
+  animation: fieldIn 0.3s ease backwards;
+}
+.modal-body .field:nth-child(1),  .modal-body .field-row:nth-child(1)  { animation-delay: 0.02s; }
+.modal-body .field:nth-child(2),  .modal-body .field-row:nth-child(2)  { animation-delay: 0.06s; }
+.modal-body .field:nth-child(3),  .modal-body .field-row:nth-child(3)  { animation-delay: 0.10s; }
+.modal-body .field:nth-child(4),  .modal-body .field-row:nth-child(4)  { animation-delay: 0.14s; }
+.modal-body .field:nth-child(5),  .modal-body .field-row:nth-child(5)  { animation-delay: 0.18s; }
+
+/* ══════════════════════════════════════════
+   LOADING SKELETON (jimirlaydigan)
+   ══════════════════════════════════════════ */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-3);
+  border-radius: var(--radius-sm);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(16,24,40,0.06), transparent);
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.skeleton-card {
+  height: 108px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+.skeleton-row {
+  height: 46px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+/* ══════════════════════════════════════════
+   Harakatni kamaytirish (foydalanuvchi sozlamasi)
+   ══════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

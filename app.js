@@ -237,6 +237,40 @@ function hideLoader() {
   if (el) el.style.display = 'none';
 }
 
+// Stat kartalardagi raqamlarni 0 dan sanab chiqadi (faqat bir marta, bo'lim ochilganda)
+function animateCounts(root) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const scope = root || document;
+  scope.querySelectorAll('.stat-value').forEach(el => {
+    if (el.dataset.animated) return;
+    if (el.children.length) { el.dataset.animated = '1'; return; } // ichida span bo'lsa — tegmaymiz
+    const text = el.textContent;
+    const match = text.match(/\d[\d\s]*/);
+    if (!match) { el.dataset.animated = '1'; return; }
+    const target = parseInt(match[0].replace(/\s/g, ''), 10);
+    if (isNaN(target) || target < 1) { el.dataset.animated = '1'; return; }
+    const prefix = text.slice(0, match.index);
+    const suffix = text.slice(match.index + match[0].length);
+    el.dataset.animated = '1';
+    const dur = 650, startT = performance.now();
+    const step = now => {
+      const t = Math.min((now - startT) / dur, 1);
+      const val = Math.round(target * (1 - Math.pow(1 - t, 3)));
+      el.textContent = prefix + val.toLocaleString('ru-RU') + suffix;
+      if (t < 1) requestAnimationFrame(step);
+      else el.textContent = text;
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+function skeletonGrid(cards = 4) {
+  return `<div class="skeleton-grid">${Array(cards).fill('<div class="skeleton skeleton-card"></div>').join('')}</div>`;
+}
+function skeletonRows(n = 5) {
+  return Array(n).fill('<div class="skeleton skeleton-row"></div>').join('');
+}
+
 function openModal(titleHtml, bodyHtml, actionsHtml, wide) {
   const m = document.getElementById('modalBody');
   m.style.width = wide ? '640px' : '';
@@ -418,6 +452,7 @@ function showView(id) {
   renderAll();
   document.getElementById('notifPanel').classList.remove('open');
   closeMobileSidebar();
+  setTimeout(() => animateCounts(), 40);
 }
 
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
@@ -1675,8 +1710,8 @@ async function renderBalans() {
   if (dateEl && !dateEl.value) dateEl.value = today();
   const asOf = dateEl ? dateEl.value : today();
   const wrap = document.getElementById('balansWrap');
-  wrap.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text-muted)">
-    <div class="spinner" style="margin:0 auto 12px"></div>Balans hisoblanmoqda...</div>`;
+  wrap.innerHTML = skeletonGrid(4) + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div>${skeletonRows(6)}</div><div>${skeletonRows(6)}</div></div>`;
 
   const { data, error } = await sb.rpc('firm_balance_sheet', { f: activeFirmId, as_of: asOf });
   if (error) {
@@ -1741,6 +1776,7 @@ async function renderBalans() {
       ${ok ? '✓ Balans tenglamasi to\'g\'ri: Aktivlar = Majburiyatlar + Kapital'
            : '⚠️ Balans yopilmadi. Farq: ' + fmt(check) + '. Biror to\'lov hisobga bog\'lanmagan yoki yozuv to\'liq emas bo\'lishi mumkin.'}
     </div>`;
+  setTimeout(() => animateCounts(wrap), 20);
 }
 
 // ══════════════════════════════════════════
