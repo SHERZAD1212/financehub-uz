@@ -2078,11 +2078,8 @@ async function deleteFirm(id) {
     { okText: 'Ha, butunlay o\'chirish' });
   if (!ok) return;
 
-  // Bola yozuvlarni oldin tozalaymiz (FK cheklovlaridan qochish uchun)
-  for (const t of ['reports', 'budgets', 'firm_members']) {
-    await sb.from(t).delete().eq('firm_id', id).then(() => {}, () => {});
-  }
-  const { error } = await sb.from('firms').delete().eq('id', id);
+  // Baza funksiyasi barcha bog'liq ma'lumotni to'g'ri tartibda o'chiradi (RLS xavfsiz)
+  const { error } = await sb.rpc('delete_firm', { f: id });
   if (error) { toast('O\'chirishda xatolik: ' + error.message, 'error', 6000); return; }
 
   if (activeFirmId === id) activeFirmId = null;
