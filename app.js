@@ -66,10 +66,24 @@ const PAGE_TITLES = {
   pl: 'P&L Hisobot',
   balans: 'Balans',
   soliqlar: 'Soliqlar',
+  hisobotlar: 'Hisobot muddatlari',
   kategoriyalar: 'Kategoriyalar',
   hisoblar: 'Hisoblar / Bank',
   kontragentlar: 'Kontragentlar'
 };
+
+// Topshiriladigan davlat hisobotlari ro'yxati (muddat kuzatuvi uchun)
+const REPORT_CATALOG = [
+  { key: 'qqs',        label: 'QQS hisoboti',                                   freq: 'Oylik' },
+  { key: 'foyda',      label: 'Foyda solig\'i',                                 freq: 'Choraklik' },
+  { key: 'daromad',    label: 'Jismoniy shaxslar daromad solig\'i (agent)',     freq: 'Oylik' },
+  { key: 'ijtimoiy',   label: 'Ijtimoiy soliq',                                 freq: 'Oylik' },
+  { key: 'aylanma',    label: 'Aylanmadan olinadigan soliq',                    freq: 'Oylik' },
+  { key: 'molmulk',    label: 'Yuridik shaxslar mol-mulk solig\'i',             freq: 'Choraklik' },
+  { key: 'yer',        label: 'Yer solig\'i',                                   freq: 'Yillik' },
+  { key: 'suv',        label: 'Suv resurslaridan foydalanganlik uchun soliq',   freq: 'Oylik' },
+  { key: 'statistika', label: 'Statistika hisoboti',                            freq: 'Choraklik' }
+];
 
 // ══════════════════════════════════════════
 // ROLLAR
@@ -291,7 +305,10 @@ const mapTransfer = r => ({
 });
 const mapFirm = r => ({
   id: r.id, name: r.name, stir: r.stir || '', phone: r.phone || '',
-  address: r.address || '', regime: r.regime || ''
+  address: r.address || '', regime: r.regime || '', reportKeys: r.report_keys || []
+});
+const mapReport = r => ({
+  id: r.id, firmId: r.firm_id, type: r.type || '', dueDate: r.due_date || '', status: r.status
 });
 const mapCont = r => ({
   id: r.id, firmId: r.firm_id, name: r.name, stir: r.stir || '',
@@ -313,7 +330,7 @@ async function loadState() {
     .select('firm_id, role_in_firm').eq('user_id', user.id);
   firmMemberships = members || [];
 
-  const [firmsR, catR, accR, opR, payR, trR, contR, faR, budR] = await Promise.all([
+  const [firmsR, catR, accR, opR, payR, trR, contR, faR, budR, repR] = await Promise.all([
     sb.from('firms').select('*'),
     sb.from('categories').select('*'),
     sb.from('cash_accounts').select('*'),
@@ -322,7 +339,8 @@ async function loadState() {
     sb.from('account_transfers').select('*'),
     sb.from('contragents').select('*'),
     sb.from('fixed_assets').select('*'),
-    sb.from('budgets').select('*')
+    sb.from('budgets').select('*'),
+    sb.from('reports').select('*')
   ]);
 
   const firstErr = [firmsR, catR, accR, opR, payR, trR, contR].find(r => r.error);
@@ -337,7 +355,8 @@ async function loadState() {
     transfers: (trR.data || []).map(mapTransfer),
     contragents: (contR.data || []).map(mapCont),
     assets: (faR.data || []).map(mapAsset),
-    budgets: (budR.data || []).map(mapBudget)
+    budgets: (budR.data || []).map(mapBudget),
+    reports: (repR.data || []).map(mapReport)
   };
 
   if (!state.firms.some(f => f.id === activeFirmId)) {
@@ -1770,6 +1789,169 @@ function renderSoliqlar() {
 }
 
 // ══════════════════════════════════════════
+// HISOBOT MUDDATLARI (qaysi hisobotni qachon topshirish kerak)
+// ══════════════════════════════════════════
+
+function firmReports() { return state.reports.filter(r => r.firmId === activeFirmId); }
+
+// Firma tanlagan hisobot turlari bo'yicha kelgusi muddatlarni avtomat yaratadi
+async function ensureUpcomingReports() {
+  if (!canEdit()) return;
+  const firm = state.firms.find(f => f.id === activeFirmId);
+  const keys = (firm && firm.reportKeys) || [];
+  if (!keys.length) return;
+  const existing = firmReports();
+  const now = new Date();
+  const dueDate = (freq, offset) => {
+    if (freq === 'Oylik') return new Date(now.getFullYear(), now.getMonth() + offset, 20).toISOString().slice(0, 10);
+    if (freq === 'Choraklik') { const q = Math.floor(now.getMonth() / 3); return new Date(now.getFullYear(), q * 3 + 3 + offset * 3, 20).toISOString().slice(0, 10); }
+    return new Date(now.getFullYear() + offset, 1, 20).toISOString().slice(0, 10);
+  };
+  const toInsert = [];
+  keys.forEach(key => {
+    const cat = REPORT_CATALOG.find(r => r.key === key);
+    if (!cat) return;
+    const offsets = cat.freq === 'Oylik' ? [0, 1, 2] : cat.freq === 'Choraklik' ? [0, 1] : [0];
+    offsets.forEach(offset => {
+      const due = dueDate(cat.freq, offset);
+      const already = existing.some(r => r.type === cat.label && r.dueDate === due) ||
+        toInsert.some(r => r.type === cat.label && r.due_date === due);
+      if (!already) toInsert.push({ firm_id: activeFirmId, type: cat.label, due_date: due, status: 'Kutilmoqda' });
+    });
+  });
+  if (toInsert.length) { await sb.from('reports').insert(toInsert); await refreshAndRender(); }
+}
+
+function renderReports() {
+  const todayStr = today();
+  const list = firmReports();
+  const wrap = document.getElementById('reportsWrap');
+  if (!list.length) {
+    wrap.innerHTML = emptyState('📄', 'Hisobot yo\'q',
+      '"Hisobot turlarini tanlash" orqali kuzatiladigan hisobotlarni belgilang yoki "Hisobot qo\'shish" bilan qo\'lda kiriting');
+    return;
+  }
+
+  const byMonth = {};
+  list.forEach(r => {
+    const m = r.dueDate ? r.dueDate.slice(0, 7) : 'Boshqa';
+    (byMonth[m] = byMonth[m] || []).push(r);
+  });
+  const months = Object.keys(byMonth).sort();
+
+  const rowHtml = r => {
+    const days = daysUntil(r.dueDate);
+    const overdue = r.status !== 'Topshirilgan' && r.dueDate && r.dueDate < todayStr;
+    const cls = r.status === 'Topshirilgan' ? 'success' : overdue ? 'danger' : (days !== null && days <= 5 ? 'warning' : 'info');
+    const label = r.status === 'Topshirilgan' ? 'Topshirilgan' : overdue ? 'Muddati o\'tgan' : 'Kutilmoqda';
+    const daysLabel = r.status === 'Topshirilgan' ? '—' : days === null ? '—' : days < 0 ? `${Math.abs(days)} kun o'tdi` : `${days} kun`;
+    return `<tr>
+      <td><strong>${escHtml(r.type)}</strong></td>
+      <td>${formatDate(r.dueDate)}</td>
+      <td style="color:${overdue ? 'var(--danger-light)' : (days !== null && days <= 5 ? 'var(--warning-light)' : 'var(--text-muted)')}">${daysLabel}</td>
+      <td><span class="badge ${cls}">${label}</span></td>
+      <td><div class="row-actions">
+        <button class="btn btn-sm buxgalter-only btn-${r.status === 'Topshirilgan' ? 'secondary' : 'success'}" onclick="toggleReport('${r.id}')">
+          ${r.status === 'Topshirilgan' ? '↩ Bekor' : '✓ Topshirildi'}</button>
+        <button class="btn btn-sm btn-danger buxgalter-only" onclick="deleteReport('${r.id}')">🗑</button>
+      </div></td>
+    </tr>`;
+  };
+
+  const notice = `<div style="margin-bottom:16px;padding:12px 16px;background:var(--warning-bg);border-radius:var(--radius-md);font-size:12.5px;color:var(--warning-light)">
+    ⚠️ Kelgusi muddatlar taxminiy — har oyning 20-sanasi bilan yaratiladi. Aniq muddatlarni soliq idorasi jadvali bilan tekshiring.
+  </div>`;
+
+  wrap.innerHTML = notice + months.map(m => {
+    const rows = byMonth[m].sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+    const pending = rows.filter(r => r.status !== 'Topshirilgan').length;
+    return `<div class="chart-card" style="margin-bottom:16px;padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--bg-3)">
+        <strong style="font-size:14px">${m === 'Boshqa' ? 'Muddati belgilanmagan' : monthLabel(m)}</strong>
+        <span class="badge ${pending ? 'warning' : 'success'}">${pending ? pending + ' ta kutilmoqda' : 'Barchasi topshirilgan'}</span>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Hisobot turi</th><th>Muddat</th><th>Qolgan</th><th>Holat</th><th></th></tr></thead>
+        <tbody>${rows.map(rowHtml).join('')}</tbody>
+      </table></div>
+    </div>`;
+  }).join('');
+}
+
+function openReportSettingsModal() {
+  const firm = state.firms.find(f => f.id === activeFirmId);
+  const keys = (firm && firm.reportKeys) || [];
+  openModal('Kuzatiladigan hisobot turlari', `
+    <div class="field-hint" style="margin-bottom:12px">Firmangiz topshiradigan hisobotlarni belgilang — muddatlar avtomat yaratiladi.</div>
+    <div class="checkbox-group">
+      ${REPORT_CATALOG.map(r => `
+        <div class="checkbox-item">
+          <input type="checkbox" id="rep_${r.key}" value="${r.key}" ${keys.includes(r.key) ? 'checked' : ''}>
+          <label for="rep_${r.key}">${escHtml(r.label)} · ${r.freq}</label>
+        </div>`).join('')}
+    </div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="saveReportSettings(this)">Saqlash</button>`);
+}
+
+async function saveReportSettings(btn) {
+  const keys = REPORT_CATALOG.filter(r => document.getElementById('rep_' + r.key)?.checked).map(r => r.key);
+  setBtnLoading(btn, true);
+  try {
+    const { error } = await sb.from('firms').update({ report_keys: keys }).eq('id', activeFirmId);
+    if (error) { toast('Xatolik: ' + error.message, 'error'); return; }
+    closeModal();
+    toast('Saqlandi — muddatlar yaratilmoqda...', 'success');
+    await loadState();
+    await ensureUpcomingReports();
+    renderAll();
+  } finally { setBtnLoading(btn, false); }
+}
+
+function openReportModal() {
+  openModal('Hisobot qo\'shish', `
+    <div class="field"><label>Hisobot turi *</label>
+      <input id="r_type" placeholder="Masalan: QQS hisoboti" list="reportCatalog">
+      <datalist id="reportCatalog">${REPORT_CATALOG.map(r => `<option value="${escHtml(r.label)}">`).join('')}</datalist></div>
+    <div class="field"><label>Topshirish muddati</label><input id="r_due" type="date"></div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="saveReport(this)">Saqlash</button>`);
+}
+
+async function saveReport(btn) {
+  const type = document.getElementById('r_type').value.trim();
+  if (!type) { toast('Hisobot turini kiriting', 'warning'); return; }
+  setBtnLoading(btn, true);
+  try {
+    const { error } = await sb.from('reports').insert({
+      firm_id: activeFirmId, type,
+      due_date: document.getElementById('r_due').value || null, status: 'Kutilmoqda'
+    });
+    if (error) { toast('Xatolik: ' + error.message, 'error'); return; }
+    closeModal();
+    toast('Hisobot qo\'shildi', 'success');
+    await refreshAndRender();
+  } finally { setBtnLoading(btn, false); }
+}
+
+async function toggleReport(id) {
+  const r = state.reports.find(x => x.id === id);
+  if (!r) return;
+  const newStatus = r.status === 'Topshirilgan' ? 'Kutilmoqda' : 'Topshirilgan';
+  const { error } = await sb.from('reports').update({ status: newStatus }).eq('id', id);
+  if (error) { toast('Xatolik: ' + error.message, 'error'); return; }
+  await refreshAndRender();
+}
+
+async function deleteReport(id) {
+  if (!(await confirmDialog('Ushbu hisobotni o\'chirasizmi?'))) return;
+  const { error } = await sb.from('reports').delete().eq('id', id);
+  if (error) { toast('Xatolik: ' + error.message, 'error'); return; }
+  toast('O\'chirildi', 'success');
+  await refreshAndRender();
+}
+
+// ══════════════════════════════════════════
 // BYUDJET
 // ══════════════════════════════════════════
 
@@ -2073,6 +2255,16 @@ function getNotifications() {
     notifs.push({ type: 'warning', icon: '🚚', title: 'Yo\'ldagi pul',
       sub: `${fmt(t.amount)} — ${formatDate(t.sentDate)} da jo'natilgan, hali yetib bormagan` });
   });
+  firmReports().filter(r => r.status !== 'Topshirilgan').forEach(r => {
+    const days = daysUntil(r.dueDate);
+    if (days !== null && days < 0) {
+      notifs.push({ type: 'danger', icon: '🚨', title: `${r.type} — muddati o'tdi`,
+        sub: `${Math.abs(days)} kun oldin (${formatDate(r.dueDate)})` });
+    } else if (days !== null && days <= 5 && days >= 0) {
+      notifs.push({ type: 'warning', icon: '📋', title: `${r.type} — topshirish yaqin`,
+        sub: `${days} kun qoldi — ${formatDate(r.dueDate)}` });
+    }
+  });
   return notifs;
 }
 
@@ -2118,6 +2310,7 @@ function renderAll() {
     case 'pl': renderPL(); break;
     case 'balans': renderBalans(); break;
     case 'soliqlar': renderSoliqlar(); break;
+    case 'hisobotlar': renderReports(); ensureUpcomingReports(); break;
     case 'kategoriyalar': renderKategoriyalar(); break;
     case 'hisoblar': renderHisoblar(); break;
     case 'kontragentlar': renderKontragentlar(); break;
