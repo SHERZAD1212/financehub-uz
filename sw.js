@@ -1,10 +1,11 @@
-// FinanceHub UZ — Service Worker v3
-const CACHE_NAME = 'financehub-v3';
+// FinanceHub UZ — Service Worker v5
+const CACHE_NAME = 'financehub-v5';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
-  './app.js'
+  './app.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', e => {
