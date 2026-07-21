@@ -1822,13 +1822,61 @@ async function ensureUpcomingReports() {
   if (toInsert.length) { await sb.from('reports').insert(toInsert); await refreshAndRender(); }
 }
 
+// Hisobotning hisoblangan holati: done / overdue / pending
+function reportState(r, todayStr) {
+  if (r.status === 'Topshirilgan') return 'done';
+  if (r.dueDate && r.dueDate < todayStr) return 'overdue';
+  return 'pending';
+}
+
+function resetReportFilters() {
+  const s = document.getElementById('repSearch');
+  const m = document.getElementById('repMonthFilter');
+  const st = document.getElementById('repStatusFilter');
+  if (s) s.value = ''; if (m) m.value = ''; if (st) st.value = '';
+  renderReports();
+}
+
 function renderReports() {
   const todayStr = today();
-  const list = firmReports();
+  const all = firmReports();
+
+  // ── Umumiy kartalar (filtrga bog'liq emas) ──
+  const cardsEl = document.getElementById('reportsCards');
+  if (cardsEl) {
+    const pending = all.filter(r => reportState(r, todayStr) === 'pending').length;
+    const overdue = all.filter(r => reportState(r, todayStr) === 'overdue').length;
+    const done = all.filter(r => reportState(r, todayStr) === 'done').length;
+    const thisMonth = all.filter(r => monthOf(r.dueDate) === currentMonth() && reportState(r, todayStr) !== 'done').length;
+    cardsEl.innerHTML = `
+      <div class="stat-card warning"><div class="stat-icon warning">📋</div>
+        <div class="stat-label">Kutilmoqda</div><div class="stat-value">${pending} ta</div></div>
+      <div class="stat-card danger"><div class="stat-icon danger">🚨</div>
+        <div class="stat-label">Muddati o'tgan</div><div class="stat-value">${overdue} ta</div></div>
+      <div class="stat-card accent"><div class="stat-icon accent">📅</div>
+        <div class="stat-label">Shu oy topshiriladigan</div><div class="stat-value">${thisMonth} ta</div></div>
+      <div class="stat-card success"><div class="stat-icon success">✓</div>
+        <div class="stat-label">Topshirilgan</div><div class="stat-value">${done} ta</div></div>`;
+  }
+
+  // ── Filtrlar ──
+  const q = (document.getElementById('repSearch')?.value || '').toLowerCase();
+  const monthF = document.getElementById('repMonthFilter')?.value || '';
+  const statusF = document.getElementById('repStatusFilter')?.value || '';
+
+  let list = all;
+  if (q) list = list.filter(r => (r.type || '').toLowerCase().includes(q));
+  if (monthF) list = list.filter(r => monthOf(r.dueDate) === monthF);
+  if (statusF) list = list.filter(r => reportState(r, todayStr) === statusF);
+
   const wrap = document.getElementById('reportsWrap');
-  if (!list.length) {
+  if (!all.length) {
     wrap.innerHTML = emptyState('📄', 'Hisobot yo\'q',
       '"Hisobot turlarini tanlash" orqali kuzatiladigan hisobotlarni belgilang yoki "Hisobot qo\'shish" bilan qo\'lda kiriting');
+    return;
+  }
+  if (!list.length) {
+    wrap.innerHTML = emptyState('🔍', 'Filtrga mos hisobot yo\'q', 'Filtrlarni o\'zgartiring yoki tozalang');
     return;
   }
 
@@ -1841,34 +1889,30 @@ function renderReports() {
 
   const rowHtml = r => {
     const days = daysUntil(r.dueDate);
-    const overdue = r.status !== 'Topshirilgan' && r.dueDate && r.dueDate < todayStr;
-    const cls = r.status === 'Topshirilgan' ? 'success' : overdue ? 'danger' : (days !== null && days <= 5 ? 'warning' : 'info');
-    const label = r.status === 'Topshirilgan' ? 'Topshirilgan' : overdue ? 'Muddati o\'tgan' : 'Kutilmoqda';
-    const daysLabel = r.status === 'Topshirilgan' ? '—' : days === null ? '—' : days < 0 ? `${Math.abs(days)} kun o'tdi` : `${days} kun`;
+    const st = reportState(r, todayStr);
+    const cls = st === 'done' ? 'success' : st === 'overdue' ? 'danger' : (days !== null && days <= 5 ? 'warning' : 'info');
+    const label = st === 'done' ? 'Topshirilgan' : st === 'overdue' ? 'Muddati o\'tgan' : 'Kutilmoqda';
+    const daysLabel = st === 'done' ? '—' : days === null ? '—' : days < 0 ? `${Math.abs(days)} kun o'tdi` : `${days} kun`;
     return `<tr>
       <td><strong>${escHtml(r.type)}</strong></td>
       <td>${formatDate(r.dueDate)}</td>
-      <td style="color:${overdue ? 'var(--danger-light)' : (days !== null && days <= 5 ? 'var(--warning-light)' : 'var(--text-muted)')}">${daysLabel}</td>
+      <td style="color:${st === 'overdue' ? 'var(--danger-light)' : (days !== null && days <= 5 ? 'var(--warning-light)' : 'var(--text-muted)')}">${daysLabel}</td>
       <td><span class="badge ${cls}">${label}</span></td>
       <td><div class="row-actions">
-        <button class="btn btn-sm buxgalter-only btn-${r.status === 'Topshirilgan' ? 'secondary' : 'success'}" onclick="toggleReport('${r.id}')">
-          ${r.status === 'Topshirilgan' ? '↩ Bekor' : '✓ Topshirildi'}</button>
+        <button class="btn btn-sm buxgalter-only btn-${st === 'done' ? 'secondary' : 'success'}" onclick="toggleReport('${r.id}')">
+          ${st === 'done' ? '↩ Bekor' : '✓ Topshirildi'}</button>
         <button class="btn btn-sm btn-danger buxgalter-only" onclick="deleteReport('${r.id}')">🗑</button>
       </div></td>
     </tr>`;
   };
 
-  const notice = `<div style="margin-bottom:16px;padding:12px 16px;background:var(--warning-bg);border-radius:var(--radius-md);font-size:12.5px;color:var(--warning-light)">
-    ⚠️ Kelgusi muddatlar taxminiy — har oyning 20-sanasi bilan yaratiladi. Aniq muddatlarni soliq idorasi jadvali bilan tekshiring.
-  </div>`;
-
-  wrap.innerHTML = notice + months.map(m => {
+  wrap.innerHTML = months.map(m => {
     const rows = byMonth[m].sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
-    const pending = rows.filter(r => r.status !== 'Topshirilgan').length;
+    const pending = rows.filter(r => reportState(r, todayStr) !== 'done').length;
     return `<div class="chart-card" style="margin-bottom:16px;padding:0;overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--bg-3)">
         <strong style="font-size:14px">${m === 'Boshqa' ? 'Muddati belgilanmagan' : monthLabel(m)}</strong>
-        <span class="badge ${pending ? 'warning' : 'success'}">${pending ? pending + ' ta kutilmoqda' : 'Barchasi topshirilgan'}</span>
+        <span class="badge ${pending ? 'warning' : 'success'}">${pending ? pending + ' ta tayyorlash kerak' : 'Barchasi topshirilgan'}</span>
       </div>
       <div class="table-wrap"><table>
         <thead><tr><th>Hisobot turi</th><th>Muddat</th><th>Qolgan</th><th>Holat</th><th></th></tr></thead>

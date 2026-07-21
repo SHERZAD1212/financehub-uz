@@ -338,7 +338,20 @@
       <!-- HISOBOT MUDDATLARI -->
       <section class="view" id="view-hisobotlar">
         <div class="section-toolbar">
-          <div class="toolbar-left"></div>
+          <div class="toolbar-left">
+            <div class="search-box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="repSearch" placeholder="Hisobot nomi..." oninput="renderReports()">
+            </div>
+            <input type="month" id="repMonthFilter" onchange="renderReports()">
+            <select id="repStatusFilter" onchange="renderReports()">
+              <option value="">Barcha holat</option>
+              <option value="pending">Kutilmoqda</option>
+              <option value="overdue">Muddati o'tgan</option>
+              <option value="done">Topshirilgan</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="resetReportFilters()">Tozalash</button>
+          </div>
           <div class="toolbar-right">
             <button class="btn btn-secondary buxgalter-only" onclick="openReportSettingsModal()">⚙️ Hisobot turlarini tanlash</button>
             <button class="btn btn-primary buxgalter-only" onclick="openReportModal()">
@@ -347,6 +360,7 @@
             </button>
           </div>
         </div>
+        <div class="stats-grid" id="reportsCards"></div>
         <div id="reportsWrap"></div>
       </section>
 
