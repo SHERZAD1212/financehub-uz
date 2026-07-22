@@ -4,8 +4,8 @@
   "description": "O'zbekiston uchun zamonaviy moliya va buxgalteriya tizimi",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#F5F6FA",
-  "theme_color": "#6C5CE7",
+  "background_color": "#0A0B10",
+  "theme_color": "#14151C",
   "orientation": "portrait-primary",
   "lang": "uz",
   "icons": [

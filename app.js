@@ -1655,10 +1655,10 @@ function renderCashflow() {
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#6B7280', font: { family: 'Inter', size: 12 } } } },
+        plugins: { legend: { labels: { color: '#A9ADBD', font: { family: 'Inter', size: 12 } } } },
         scales: {
-          x: { ticks: { color: '#9AA0AE', font: { family: 'Inter' } }, grid: { color: 'rgba(16,24,40,0.06)' } },
-          y: { ticks: { color: '#9AA0AE', font: { family: 'Inter' }, callback: v => v + ' mln' }, grid: { color: 'rgba(16,24,40,0.06)' } }
+          x: { ticks: { color: '#7E8294', font: { family: 'Inter' } }, grid: { color: 'rgba(255,255,255,0.07)' } },
+          y: { ticks: { color: '#7E8294', font: { family: 'Inter' }, callback: v => v + ' mln' }, grid: { color: 'rgba(255,255,255,0.07)' } }
         }
       }
     });
@@ -2483,12 +2483,12 @@ function updateChart() {
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: '#6B7280', font: { family: 'Inter', size: 12 } } },
+        legend: { labels: { color: '#A9ADBD', font: { family: 'Inter', size: 12 } } },
         tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw.toFixed(1)} mln so'm` } }
       },
       scales: {
-        x: { ticks: { color: '#9AA0AE', font: { family: 'Inter', size: 11 } }, grid: { color: 'rgba(16,24,40,0.06)' } },
-        y: { ticks: { color: '#9AA0AE', font: { family: 'Inter', size: 11 }, callback: v => v + ' mln' }, grid: { color: 'rgba(16,24,40,0.06)' } }
+        x: { ticks: { color: '#7E8294', font: { family: 'Inter', size: 11 } }, grid: { color: 'rgba(255,255,255,0.07)' } },
+        y: { ticks: { color: '#7E8294', font: { family: 'Inter', size: 11 }, callback: v => v + ' mln' }, grid: { color: 'rgba(255,255,255,0.07)' } }
       }
     }
   });
@@ -2518,7 +2518,7 @@ function updateCategoryChart() {
     options: {
       responsive: true, maintainAspectRatio: false, cutout: '65%',
       plugins: {
-        legend: { position: 'bottom', labels: { color: '#6B7280', font: { family: 'Inter', size: 11 }, padding: 12, boxWidth: 12 } },
+        legend: { position: 'bottom', labels: { color: '#A9ADBD', font: { family: 'Inter', size: 11 }, padding: 12, boxWidth: 12 } },
         tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw.toFixed(1)} mln so'm` } }
       }
     }

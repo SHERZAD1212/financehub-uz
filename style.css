@@ -9,56 +9,56 @@
   --sidebar-w: 240px;
   --topbar-h: 64px;
 
-  /* Colors — premium fintech (Stripe/Mercury uslubi) */
-  --bg: #F5F5F9;              /* page background */
-  --bg-2: #FFFFFF;            /* sidebar / cards */
-  --bg-3: #F4F4F9;            /* subtle hover / inputs */
-  --bg-card: #FFFFFF;
-  --bg-card-hover: #FAFAFD;
-  --border: #ECECF2;
-  --border-light: #F3F3F8;
+  /* Colors — premium DARK (Linear/Vercel uslubi) */
+  --bg: #0A0B10;             /* page background (deep near-black) */
+  --bg-2: #14151C;           /* sidebar / cards */
+  --bg-3: #1B1D27;           /* subtle hover / inputs */
+  --bg-card: #14151C;
+  --bg-card-hover: #1A1C26;
+  --border: rgba(255,255,255,0.08);
+  --border-light: rgba(255,255,255,0.05);
 
-  /* Text — refined ink scale */
-  --text: #16171D;
-  --text-secondary: #6C6F7E;
-  --text-muted: #9A9DAC;
-  --text-white: #16171D;      /* sarlavha ink (yorug' kartada to'q matn) */
+  /* Text — light on dark */
+  --text: #ECEDF3;
+  --text-secondary: #A9ADBD;
+  --text-muted: #7E8294;
+  --text-white: #FFFFFF;      /* sarlavhalar oq */
 
-  /* Accent — deep indigo-violet */
-  --accent: #5B50E0;
-  --accent-light: #8B82F5;
-  --accent-glow: rgba(91,80,224,0.28);
-  --accent-bg: #EEECFC;
+  /* Accent — brighter violet for dark ground */
+  --accent: #8B82F5;
+  --accent-light: #A79FF8;
+  --accent-glow: rgba(139,130,245,0.35);
+  --accent-bg: rgba(139,130,245,0.16);
 
   /* Semantic */
-  --success: #0E9F6E;
-  --success-bg: #E4F5EE;
-  --success-light: #0E9F6E;
+  --success: #34D399;
+  --success-bg: rgba(52,211,153,0.14);
+  --success-light: #34D399;
 
-  --danger: #E0484C;
-  --danger-bg: #FCEBEB;
-  --danger-light: #D8383C;
+  --danger: #F2696C;
+  --danger-bg: rgba(242,105,108,0.14);
+  --danger-light: #F2696C;
 
-  --warning: #C7860B;
-  --warning-bg: #FBF1DD;
-  --warning-light: #A9720A;
+  --warning: #E8B24C;
+  --warning-bg: rgba(232,178,76,0.14);
+  --warning-light: #E8B24C;
 
-  --info: #5B50E0;
-  --info-bg: #EEECFC;
+  --info: #8B82F5;
+  --info-bg: rgba(139,130,245,0.16);
 
   /* Gradients */
-  --gradient-accent: linear-gradient(135deg, #6E63F0, #5B50E0);
-  --gradient-success: linear-gradient(135deg, #1BB77E, #0E9F6E);
-  --gradient-danger: linear-gradient(135deg, #EC5A5E, #E0484C);
-  --gradient-card: linear-gradient(135deg, #FFFFFF, #FBFBFE);
-  --gradient-glow: radial-gradient(ellipse at top, rgba(91,80,224,0.05) 0%, transparent 70%);
-  --gradient-ink: linear-gradient(135deg, #2A2B34 0%, #16171D 100%);
+  --gradient-accent: linear-gradient(135deg, #9089F7, #6E63F0);
+  --gradient-success: linear-gradient(135deg, #34D399, #10B981);
+  --gradient-danger: linear-gradient(135deg, #F2696C, #E0484C);
+  --gradient-card: linear-gradient(135deg, #14151C, #12131A);
+  --gradient-glow: radial-gradient(ellipse at top, rgba(139,130,245,0.10) 0%, transparent 70%);
+  --gradient-ink: linear-gradient(135deg, #9089F7 0%, #6E63F0 100%); /* hero = violet, dark fonda ajralib turadi */
 
-  /* Shadows — layered, premium depth */
-  --shadow-sm: 0 1px 2px rgba(16,24,40,0.04);
-  --shadow-md: 0 1px 2px rgba(16,24,40,0.04), 0 10px 28px -14px rgba(16,24,40,0.16);
-  --shadow-lg: 0 1px 3px rgba(16,24,40,0.05), 0 24px 48px -20px rgba(16,24,40,0.22);
-  --shadow-glow: 0 1px 2px rgba(91,80,224,0.4), 0 10px 24px -10px rgba(91,80,224,0.5);
+  /* Shadows — deep for dark */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 1px 2px rgba(0,0,0,0.4), 0 12px 32px -16px rgba(0,0,0,0.7);
+  --shadow-lg: 0 1px 3px rgba(0,0,0,0.5), 0 28px 56px -24px rgba(0,0,0,0.85);
+  --shadow-glow: 0 1px 2px rgba(139,130,245,0.4), 0 12px 28px -10px rgba(139,130,245,0.5);
 
   /* Radius — softer, more premium */
   --radius-sm: 10px;
@@ -350,7 +350,7 @@ body {
   top: 0;
   z-index: 50;
   height: var(--topbar-h);
-  background: rgba(255,255,255,0.82);
+  background: rgba(10,11,16,0.72);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -517,7 +517,7 @@ body {
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-  border-color: rgba(16,24,40,0.10);
+  border-color: rgba(255,255,255,0.14);
 }
 
 .stat-icon {
@@ -810,7 +810,7 @@ thead th {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: #FAFBFD;
+  background: rgba(255,255,255,0.02);
   border-bottom: 1px solid var(--border);
 }
 
@@ -827,7 +827,7 @@ tbody tr {
   transition: background var(--transition);
 }
 
-tbody tr:hover { background: rgba(108,92,231,0.04); }
+tbody tr:hover { background: rgba(139,130,245,0.09); }
 
 /* ── Badges ── */
 .badge {
@@ -855,7 +855,7 @@ tbody tr:hover { background: rgba(108,92,231,0.04); }
 .badge.warning::before { background: var(--warning); }
 .badge.info { background: var(--info-bg); color: var(--info); }
 .badge.info::before { background: var(--info); }
-.badge.muted { background: #EEF0F4; color: var(--text-muted); }
+.badge.muted { background: rgba(255,255,255,0.08); color: var(--text-muted); }
 .badge.muted::before { background: var(--text-muted); }
 
 /* ── Row Actions ── */
@@ -911,7 +911,7 @@ tbody tr:hover { background: rgba(108,92,231,0.04); }
 
 .progress-bar {
   height: 6px;
-  background: #ECEDF2;
+  background: rgba(255,255,255,0.08);
   border-radius: var(--radius-full);
   overflow: hidden;
 }
@@ -1079,7 +1079,7 @@ tbody tr:hover { background: rgba(108,92,231,0.04); }
   transition: border-color var(--transition);
 }
 
-.checkbox-item:hover { border-color: rgba(16,24,40,0.12); }
+.checkbox-item:hover { border-color: rgba(255,255,255,0.16); }
 
 .checkbox-item input[type="checkbox"] {
   width: auto;
@@ -1115,14 +1115,14 @@ tbody tr:hover { background: rgba(108,92,231,0.04); }
 /* ── Input Controls (select etc) ── */
 input[type="month"],
 input[type="date"] {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D5D7DE; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #B9BCC7; }
+::-webkit-scrollbar-thumb { background: #2E3140; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3C4052; }
 
 /* ── Mobile menu button (hidden on desktop) ── */
 .mobile-menu-btn {
@@ -1361,7 +1361,7 @@ body.role-direktor .buxgalter-only { display: none !important; }
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
-.budget-item:hover { border-color: rgba(16,24,40,0.12); }
+.budget-item:hover { border-color: rgba(255,255,255,0.16); }
 
 /* Jadval qatori amal tugmalari */
 .row-actions .btn { transition: transform 0.12s ease, background var(--transition), color var(--transition); }
@@ -1399,7 +1399,7 @@ tbody tr:hover .badge { transform: scale(1.04); }
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(16,24,40,0.06), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
   animation: shimmer 1.4s infinite;
 }
 @keyframes shimmer { 100% { transform: translateX(100%); } }
@@ -1492,7 +1492,7 @@ tbody td { padding: 13px 18px; }
 .table-wrap { border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
 
 /* ── Topbar — toza ── */
-.topbar { background: rgba(255,255,255,0.72); border-bottom: 1px solid var(--border); }
+.topbar { background: rgba(10,11,16,0.72); border-bottom: 1px solid var(--border); }
 
 /* ── Badge/pill — biroz yumaloqroq ── */
 .badge { font-weight: 600; }
