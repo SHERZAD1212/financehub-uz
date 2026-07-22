@@ -271,6 +271,33 @@ function skeletonRows(n = 5) {
   return Array(n).fill('<div class="skeleton skeleton-row"></div>').join('');
 }
 
+// Mini trend chizig'i (sparkline) — kartalar uchun
+function sparklineSVG(values, color) {
+  const w = 78, h = 30, pad = 4;
+  const vals = (values && values.length) ? values : [0, 0];
+  const max = Math.max(...vals), min = Math.min(...vals);
+  const range = (max - min) || 1;
+  const n = vals.length;
+  const pts = vals.map((v, i) => {
+    const x = pad + (w - 2 * pad) * (n > 1 ? i / (n - 1) : 0.5);
+    const y = pad + (h - 2 * pad) * (1 - (v - min) / range);
+    return [x, y];
+  });
+  const poly = pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const last = pts[pts.length - 1];
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" fill="none" preserveAspectRatio="none">
+    <polyline points="${poly}" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.6" fill="${color}"/></svg>`;
+}
+
+// Ism/nomdan avatar harflari
+function avatarInitials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '—';
+  const ini = (parts[0][0] || '') + (parts[1] ? parts[1][0] : '');
+  return ini.toUpperCase();
+}
+
 function openModal(titleHtml, bodyHtml, actionsHtml, wide) {
   const m = document.getElementById('modalBody');
   m.style.width = wide ? '640px' : '';
@@ -444,15 +471,16 @@ function paymentCategory(p) {
 // ══════════════════════════════════════════
 
 function showView(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active', 'anim-enter'));
   const target = document.getElementById('view-' + id);
-  if (target) target.classList.add('active');
+  if (target) target.classList.add('active', 'anim-enter');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === id));
   document.getElementById('pageTitle').textContent = PAGE_TITLES[id] || id;
   renderAll();
   document.getElementById('notifPanel').classList.remove('open');
   closeMobileSidebar();
   setTimeout(() => animateCounts(), 40);
+  if (target) setTimeout(() => target.classList.remove('anim-enter'), 850);
 }
 
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
@@ -1219,7 +1247,8 @@ function renderKassa() {
         const acc = accById(p.accountId);
         return `<tr>
           <td>${formatDate(p.paymentDate)}</td>
-          <td><strong>${escHtml(cat ? cat.name : '—')}</strong></td>
+          <td><div class="tx-party"><div class="tx-av">${escHtml(avatarInitials(cat ? cat.name : '?'))}</div>
+            <div class="tx-nm">${escHtml(cat ? cat.name : '—')}</div></div></td>
           <td>${escHtml(op ? contragentName(op.contragentId) : '') || '—'}</td>
           <td>${escHtml(acc ? acc.name : '—')}</td>
           <td style="text-align:right">${fmtSign(paymentSigned(p))}</td>
@@ -2390,29 +2419,41 @@ function renderDashboard() {
   const debitor = open.filter(o => (catById(o.categoryId) || {}).type === 'revenue')
     .reduce((s, o) => s + (o.amount - o.paidAmount), 0);
 
+  // Sparkline uchun so'nggi 6 oy trendi
+  const m6 = getLastNMonths(6);
+  const incArr = m6.map(m => pays.filter(p => monthOf(p.paymentDate) === m).reduce((s, p) => s + Math.max(paymentSigned(p), 0), 0));
+  const expArr = m6.map(m => pays.filter(p => monthOf(p.paymentDate) === m).reduce((s, p) => s + Math.max(-paymentSigned(p), 0), 0));
+  let cum = 0; const balArr = m6.map((_, i) => (cum += incArr[i] - expArr[i]));
+
   document.getElementById('dashboardCards').innerHTML = `
     <div class="stat-card accent"><div class="stat-icon accent">💰</div>
-      <div class="stat-label">Kassa qoldig'i</div><div class="stat-value">${fmt(totalCash())}</div></div>
+      <div class="stat-label">Kassa qoldig'i</div><div class="stat-value">${fmt(totalCash())}</div>
+      ${sparklineSVG(balArr, 'rgba(255,255,255,0.85)')}</div>
     <div class="stat-card success"><div class="stat-icon success">↑</div>
-      <div class="stat-label">Shu oy kirim</div><div class="stat-value">${fmt(monthIn)}</div></div>
+      <div class="stat-label">Shu oy kirim</div><div class="stat-value">${fmt(monthIn)}</div>
+      ${sparklineSVG(incArr, 'var(--success)')}</div>
     <div class="stat-card danger"><div class="stat-icon danger">↓</div>
-      <div class="stat-label">Shu oy chiqim</div><div class="stat-value">${fmt(monthOut)}</div></div>
+      <div class="stat-label">Shu oy chiqim</div><div class="stat-value">${fmt(monthOut)}</div>
+      ${sparklineSVG(expArr, 'var(--danger)')}</div>
     <div class="stat-card warning"><div class="stat-icon warning">📥</div>
       <div class="stat-label">Debitor qarzi</div><div class="stat-value">${fmt(debitor)}</div></div>`;
 
   const recent = [...pays].sort((a, b) => (b.paymentDate || '').localeCompare(a.paymentDate || '')).slice(0, 6);
   document.getElementById('recentTransactions').innerHTML = recent.length ? `
     <div class="table-wrap"><table>
-      <thead><tr><th>Sana</th><th>Kategoriya</th><th>Hisob</th><th style="text-align:right">Summa</th></tr></thead>
+      <thead><tr><th>Kategoriya</th><th>Hisob</th><th style="text-align:right">Summa</th></tr></thead>
       <tbody>${recent.map(p => {
         const cat = paymentCategory(p);
+        const op = opById(p.operationId);
+        const who = (op && contragentName(op.contragentId)) || (cat ? cat.name : '—');
         return `<tr>
-          <td>${formatDate(p.paymentDate)}</td>
-          <td>${escHtml(cat ? cat.name : '—')}</td>
+          <td><div class="tx-party"><div class="tx-av">${escHtml(avatarInitials(who))}</div>
+            <div><div class="tx-nm">${escHtml(cat ? cat.name : '—')}</div>
+            <div class="tx-mt">${formatDate(p.paymentDate)}${op && contragentName(op.contragentId) ? ' · ' + escHtml(contragentName(op.contragentId)) : ''}</div></div></div></td>
           <td>${escHtml((accById(p.accountId) || {}).name || '—')}</td>
           <td style="text-align:right">${fmtSign(paymentSigned(p))}</td></tr>`;
       }).join('')}</tbody></table></div>`
-    : emptyState('💳', 'To\'lov yo\'q', 'Kassa bo\'limidan yozuv qo\'shing');
+    : emptyState('💳', 'Hali to\'lov yo\'q', 'Kassa bo\'limidan birinchi kirim yoki chiqimni qo\'shing — dashboard jonlanadi');
 
   updateChart();
   updateCategoryChart();
