@@ -1,5 +1,5 @@
-// FinanceHub UZ — Service Worker v5
-const CACHE_NAME = 'financehub-v5';
+// FinanceHub UZ — Service Worker v6
+const CACHE_NAME = 'financehub-v6';
 const ASSETS = [
   './',
   './index.html',
