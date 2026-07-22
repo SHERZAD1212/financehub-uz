@@ -1511,6 +1511,25 @@ tbody td { padding: 13px 18px; }
 .stat-card .stat-value { position: relative; z-index: 1; }
 @media (max-width: 560px) { .spark { display: none; } }
 
+/* ── Xarajatlar tarkibi — gorizontal bar ── */
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 6px 4px 8px;
+  min-height: 200px;
+  justify-content: center;
+}
+.brk-line { display: flex; flex-direction: column; gap: 8px; }
+.brk-top { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+.brk-name { font-weight: 600; color: var(--text); }
+.brk-amt { color: var(--text-secondary); font-weight: 500; font-variant-numeric: tabular-nums; }
+.brk-track { height: 8px; background: var(--bg-3); border-radius: var(--radius-full); overflow: hidden; }
+.brk-track > i {
+  display: block; height: 100%; border-radius: var(--radius-full);
+  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* ── Avatar (jadval qatorlarida) ── */
 .tx-party { display: flex; align-items: center; gap: 11px; }
 .tx-av {

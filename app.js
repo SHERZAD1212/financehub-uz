@@ -2471,72 +2471,71 @@ function updateChart() {
   const ctx = document.getElementById('cashflowChart');
   if (!ctx) return;
   if (cashflowChartInstance) cashflowChartInstance.destroy();
+
+  const last = months.length - 1;
+  const areaGrad = hex => (c) => {
+    const { ctx: cc, chartArea } = c.chart;
+    if (!chartArea) return hex + '00';
+    const g = cc.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+    g.addColorStop(0, hex + '55'); g.addColorStop(1, hex + '00');
+    return g;
+  };
+  const dot = (hex) => months.map((_, i) => i === last ? 5 : 0);
+
   cashflowChartInstance = new Chart(ctx, {
-    type: 'bar',
+    type: 'line',
     data: {
       labels: months.map(monthLabel),
       datasets: [
-        { label: 'Kirim', data: inData, backgroundColor: 'rgba(22,163,74,0.75)', borderColor: '#16A34A', borderWidth: 1, borderRadius: 6 },
-        { label: 'Chiqim', data: outData, backgroundColor: 'rgba(229,72,77,0.75)', borderColor: '#E5484D', borderWidth: 1, borderRadius: 6 }
+        { label: 'Kirim', data: inData, borderColor: '#34D399', backgroundColor: areaGrad('#34D399'),
+          fill: true, tension: 0.4, borderWidth: 2.6, pointRadius: dot(), pointHoverRadius: 5,
+          pointBackgroundColor: '#34D399', pointBorderColor: '#0A0B10', pointBorderWidth: 2 },
+        { label: 'Chiqim', data: outData, borderColor: '#F2696C', backgroundColor: areaGrad('#F2696C'),
+          fill: true, tension: 0.4, borderWidth: 2.6, pointRadius: dot(), pointHoverRadius: 5,
+          pointBackgroundColor: '#F2696C', pointBorderColor: '#0A0B10', pointBorderWidth: 2 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
       plugins: {
-        legend: { labels: { color: '#A9ADBD', font: { family: 'Inter', size: 12 } } },
+        legend: { labels: { color: '#A9ADBD', usePointStyle: true, pointStyle: 'circle', boxWidth: 8, font: { family: 'Inter', size: 12 } } },
         tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw.toFixed(1)} mln so'm` } }
       },
       scales: {
-        x: { ticks: { color: '#7E8294', font: { family: 'Inter', size: 11 } }, grid: { color: 'rgba(255,255,255,0.07)' } },
-        y: { ticks: { color: '#7E8294', font: { family: 'Inter', size: 11 }, callback: v => v + ' mln' }, grid: { color: 'rgba(255,255,255,0.07)' } }
+        x: { ticks: { color: '#7E8294', font: { family: 'Inter', size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#7E8294', font: { family: 'Inter', size: 11 }, callback: v => v + ' mln' }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } }
       }
     }
   });
 }
 
 function updateCategoryChart() {
+  const el = document.getElementById('categoryBreakdown');
+  if (!el) return;
+
   const map = {};
   firmPayments().forEach(p => {
     const cat = paymentCategory(p);
     if (!cat || cat.type !== 'expense') return;
     map[cat.name] = (map[cat.name] || 0) + p.amount;
   });
-  const labels = Object.keys(map);
-  const data = Object.values(map).map(v => v / 1e6);
+  const entries = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 6);
 
-  const ctx = document.getElementById('categoryChart');
-  if (!ctx) return;
-  if (categoryChartInstance) { categoryChartInstance.destroy(); categoryChartInstance = null; }
-
-  // "Ma'lumot yo'q" xabarini canvas'ni O'CHIRMASDAN ko'rsatamiz (aks holda grafik qaytmaydi)
-  const emptyMsg = ctx.parentElement.querySelector('.chart-empty');
-  if (!labels.length) {
-    ctx.style.display = 'none';
-    if (!emptyMsg) {
-      const m = document.createElement('div');
-      m.className = 'chart-empty';
-      m.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px';
-      m.textContent = "Ma'lumot yo'q";
-      ctx.parentElement.appendChild(m);
-    }
+  if (!entries.length) {
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-muted);font-size:13px">Ma'lumot yo'q</div>`;
     return;
   }
-  // Ma'lumot bor — canvas'ni ko'rsatamiz, xabarni olib tashlaymiz
-  ctx.style.display = '';
-  if (emptyMsg) emptyMsg.remove();
 
-  const colors = ['#8B82F5', '#A79FF8', '#EC4899', '#F59E0B', '#34D399', '#3B82F6', '#F2696C', '#22D3EE'];
-  categoryChartInstance = new Chart(ctx, {
-    type: 'doughnut',
-    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 8 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '65%',
-      plugins: {
-        legend: { position: 'bottom', labels: { color: '#A9ADBD', font: { family: 'Inter', size: 11 }, padding: 12, boxWidth: 12 } },
-        tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw.toFixed(1)} mln so'm` } }
-      }
-    }
-  });
+  const max = entries[0][1] || 1;
+  const colors = ['#8B82F5', '#7B72EE', '#9E97F2', '#B0AAF6', '#C6C1F9', 'var(--border)'];
+  el.innerHTML = entries.map(([name, val], i) => {
+    const pct = Math.max(4, Math.round(val / max * 100));
+    return `<div class="brk-line">
+      <div class="brk-top"><span class="brk-name">${escHtml(name)}</span><span class="brk-amt">${(val / 1e6).toFixed(1)} mln</span></div>
+      <div class="brk-track"><i style="width:${pct}%;background:${colors[i] || 'var(--border)'}"></i></div>
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════
