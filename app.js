@@ -2507,11 +2507,25 @@ function updateCategoryChart() {
   const ctx = document.getElementById('categoryChart');
   if (!ctx) return;
   if (categoryChartInstance) { categoryChartInstance.destroy(); categoryChartInstance = null; }
+
+  // "Ma'lumot yo'q" xabarini canvas'ni O'CHIRMASDAN ko'rsatamiz (aks holda grafik qaytmaydi)
+  const emptyMsg = ctx.parentElement.querySelector('.chart-empty');
   if (!labels.length) {
-    ctx.parentElement.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:220px;color:var(--text-muted);font-size:13px">Ma'lumot yo'q</div>`;
+    ctx.style.display = 'none';
+    if (!emptyMsg) {
+      const m = document.createElement('div');
+      m.className = 'chart-empty';
+      m.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px';
+      m.textContent = "Ma'lumot yo'q";
+      ctx.parentElement.appendChild(m);
+    }
     return;
   }
-  const colors = ['#6C5CE7', '#8B7CF5', '#EC4899', '#F59E0B', '#16A34A', '#3B82F6', '#E5484D', '#06B6D4'];
+  // Ma'lumot bor — canvas'ni ko'rsatamiz, xabarni olib tashlaymiz
+  ctx.style.display = '';
+  if (emptyMsg) emptyMsg.remove();
+
+  const colors = ['#8B82F5', '#A79FF8', '#EC4899', '#F59E0B', '#34D399', '#3B82F6', '#F2696C', '#22D3EE'];
   categoryChartInstance = new Chart(ctx, {
     type: 'doughnut',
     data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 8 }] },
