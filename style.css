@@ -2,63 +2,72 @@
    FinanceHub UZ — Premium Design System
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 /* ── CSS Variables ── */
 :root {
   --sidebar-w: 240px;
   --topbar-h: 64px;
 
-  /* Colors — premium DARK (Linear/Vercel uslubi) */
-  --bg: #0A0B10;             /* page background (deep near-black) */
-  --bg-2: #14151C;           /* sidebar / cards */
-  --bg-3: #1B1D27;           /* subtle hover / inputs */
-  --bg-card: #14151C;
-  --bg-card-hover: #1A1C26;
-  --border: rgba(255,255,255,0.08);
-  --border-light: rgba(255,255,255,0.05);
+  /* Colors — RaqamX brend (teal + yashil, DARK) */
+  --bg: #0A1312;             /* page background (to'q yashil-qora) */
+  --bg-2: #101B1A;           /* kartalar / panel */
+  --bg-3: #16211F;           /* hover / inputlar */
+  --bg-card: #101B1A;
+  --bg-card-hover: #15201E;
+  --border: rgba(159,196,189,0.09);
+  --border-light: rgba(159,196,189,0.05);
 
-  /* Text — light on dark */
-  --text: #ECEDF3;
-  --text-secondary: #A9ADBD;
-  --text-muted: #7E8294;
-  --text-white: #FFFFFF;      /* sarlavhalar oq */
+  /* Text — light on teal-dark */
+  --text: #E8F1EF;
+  --text-secondary: #8AA19C;
+  --text-muted: #5E736F;
+  --text-white: #FFFFFF;
 
-  /* Accent — brighter violet for dark ground */
-  --accent: #8B82F5;
-  --accent-light: #A79FF8;
-  --accent-glow: rgba(139,130,245,0.35);
-  --accent-bg: rgba(139,130,245,0.16);
+  /* Accent — RaqamX yashil */
+  --accent: #24D07A;
+  --accent-light: #5CE79E;
+  --accent-glow: rgba(36,208,122,0.35);
+  --accent-bg: rgba(36,208,122,0.12);
 
   /* Semantic */
-  --success: #34D399;
-  --success-bg: rgba(52,211,153,0.14);
-  --success-light: #34D399;
+  --success: #24D07A;
+  --success-bg: rgba(36,208,122,0.14);
+  --success-light: #34E08A;
 
-  --danger: #F2696C;
-  --danger-bg: rgba(242,105,108,0.14);
-  --danger-light: #F2696C;
+  --danger: #E5636C;
+  --danger-bg: rgba(229,99,108,0.14);
+  --danger-light: #F07A82;
 
-  --warning: #E8B24C;
-  --warning-bg: rgba(232,178,76,0.14);
-  --warning-light: #E8B24C;
+  --warning: #E8B34B;
+  --warning-bg: rgba(232,179,75,0.14);
+  --warning-light: #F0C062;
 
-  --info: #8B82F5;
-  --info-bg: rgba(139,130,245,0.16);
+  --info: #24D07A;
+  --info-bg: rgba(36,208,122,0.12);
 
   /* Gradients */
-  --gradient-accent: linear-gradient(135deg, #9089F7, #6E63F0);
-  --gradient-success: linear-gradient(135deg, #34D399, #10B981);
-  --gradient-danger: linear-gradient(135deg, #F2696C, #E0484C);
-  --gradient-card: linear-gradient(135deg, #14151C, #12131A);
-  --gradient-glow: radial-gradient(ellipse at top, rgba(139,130,245,0.10) 0%, transparent 70%);
-  --gradient-ink: linear-gradient(135deg, #9089F7 0%, #6E63F0 100%); /* hero = violet, dark fonda ajralib turadi */
+  --gradient-accent: linear-gradient(135deg, #2FE08A, #1FB86C);
+  --gradient-success: linear-gradient(135deg, #34E08A, #1FB86C);
+  --gradient-danger: linear-gradient(135deg, #EC7178, #E5636C);
+  --gradient-card: linear-gradient(135deg, #101B1A, #0E1817);
+  --gradient-glow: radial-gradient(ellipse at top, rgba(36,208,122,0.08) 0%, transparent 70%);
+  --gradient-ink: linear-gradient(135deg, #10695F, #0A4A43); /* hero = teal, RaqamX brend rangi */
 
   /* Shadows — deep for dark */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
   --shadow-md: 0 1px 2px rgba(0,0,0,0.4), 0 12px 32px -16px rgba(0,0,0,0.7);
   --shadow-lg: 0 1px 3px rgba(0,0,0,0.5), 0 28px 56px -24px rgba(0,0,0,0.85);
-  --shadow-glow: 0 1px 2px rgba(139,130,245,0.4), 0 12px 28px -10px rgba(139,130,245,0.5);
+  --shadow-glow: 0 1px 2px rgba(36,208,122,0.4), 0 12px 28px -10px rgba(36,208,122,0.45);
+
+  /* Theme-aware yordamchi tokenlar (dark) */
+  --topbar-bg: rgba(10,19,18,0.72);
+  --chip: rgba(159,196,189,0.10);
+  --border-strong: rgba(159,196,189,0.18);
+  --scroll: #223330;
+  --scroll-hover: #2E4440;
+  --shimmer: rgba(255,255,255,0.06);
+  --sidebar-bg: #0D1817;
 
   /* Radius — softer, more premium */
   --radius-sm: 10px;
@@ -72,12 +81,57 @@
   --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ══════════════════════════════════════════
+   LIGHT MODE — RaqamX yorug' tema
+   ══════════════════════════════════════════ */
+:root[data-theme="light"] {
+  --bg: #EEF2F1;
+  --bg-2: #FFFFFF;
+  --bg-3: #F1F5F4;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F7FAF9;
+  --border: rgba(12,90,82,0.12);
+  --border-light: rgba(12,90,82,0.07);
+  --text: #0B1215;
+  --text-secondary: #3E4C49;
+  --text-muted: #5B6B67;
+  --text-white: #0B1215;
+  --accent: #0C7A50;
+  --accent-light: #12A366;
+  --accent-glow: rgba(36,208,122,0.30);
+  --accent-bg: rgba(36,208,122,0.13);
+  --success: #0E8F58;
+  --success-bg: rgba(36,208,122,0.15);
+  --success-light: #0E8F58;
+  --danger: #D6454F;
+  --danger-bg: rgba(214,69,79,0.10);
+  --danger-light: #C43B45;
+  --warning: #B07A0C;
+  --warning-bg: rgba(232,179,75,0.18);
+  --warning-light: #96680A;
+  --info: #0C7A50;
+  --info-bg: rgba(36,208,122,0.13);
+  --gradient-card: linear-gradient(135deg, #FFFFFF, #FBFDFC);
+  --gradient-glow: radial-gradient(ellipse at top, rgba(12,90,82,0.05) 0%, transparent 70%);
+  --shadow-sm: 0 1px 2px rgba(11,18,21,0.05);
+  --shadow-md: 0 1px 2px rgba(11,18,21,0.05), 0 10px 28px -14px rgba(11,18,21,0.14);
+  --shadow-lg: 0 1px 3px rgba(11,18,21,0.06), 0 24px 48px -20px rgba(11,18,21,0.18);
+  --shadow-glow: 0 1px 2px rgba(36,208,122,0.35), 0 10px 24px -10px rgba(36,208,122,0.40);
+  --topbar-bg: rgba(255,255,255,0.80);
+  --chip: rgba(12,90,82,0.08);
+  --border-strong: rgba(12,90,82,0.22);
+  --scroll: #C9D6D2;
+  --scroll-hover: #AEC1BB;
+  --shimmer: rgba(11,18,21,0.06);
+  --sidebar-bg: #FFFFFF;
+}
+
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 14px; }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -227,7 +281,7 @@ body {
   gap: 6px;
   padding: 7px;
   background: var(--accent-bg);
-  border: 1px dashed rgba(99,102,241,0.4);
+  border: 1px dashed rgba(36,208,122,0.4);
   border-radius: var(--radius-sm);
   color: var(--accent-light);
   font-size: 12px;
@@ -237,7 +291,7 @@ body {
 }
 
 .btn-add-firm:hover {
-  background: rgba(99,102,241,0.2);
+  background: rgba(36,208,122,0.15);
   border-color: var(--accent);
 }
 
@@ -350,7 +404,7 @@ body {
   top: 0;
   z-index: 50;
   height: var(--topbar-h);
-  background: rgba(10,11,16,0.72);
+  background: var(--topbar-bg);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -517,7 +571,7 @@ body {
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-  border-color: rgba(255,255,255,0.14);
+  border-color: var(--border-strong);
 }
 
 .stat-icon {
@@ -743,12 +797,12 @@ body {
   background: var(--gradient-accent);
   color: white;
   border-color: var(--accent);
-  box-shadow: 0 0 16px rgba(99,102,241,0.3);
+  box-shadow: 0 0 16px rgba(36,208,122,0.3);
 }
 
 .btn-primary:hover {
   opacity: 0.9;
-  box-shadow: 0 0 24px rgba(99,102,241,0.45);
+  box-shadow: 0 0 24px rgba(36,208,122,0.45);
   transform: translateY(-1px);
 }
 
@@ -827,7 +881,7 @@ tbody tr {
   transition: background var(--transition);
 }
 
-tbody tr:hover { background: rgba(139,130,245,0.09); }
+tbody tr:hover { background: rgba(36,208,122,0.07); }
 
 /* ── Badges ── */
 .badge {
@@ -855,7 +909,7 @@ tbody tr:hover { background: rgba(139,130,245,0.09); }
 .badge.warning::before { background: var(--warning); }
 .badge.info { background: var(--info-bg); color: var(--info); }
 .badge.info::before { background: var(--info); }
-.badge.muted { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+.badge.muted { background: var(--chip); color: var(--text-muted); }
 .badge.muted::before { background: var(--text-muted); }
 
 /* ── Row Actions ── */
@@ -911,7 +965,7 @@ tbody tr:hover { background: rgba(139,130,245,0.09); }
 
 .progress-bar {
   height: 6px;
-  background: rgba(255,255,255,0.08);
+  background: var(--chip);
   border-radius: var(--radius-full);
   overflow: hidden;
 }
@@ -1038,7 +1092,7 @@ tbody tr:hover { background: rgba(139,130,245,0.09); }
 .field select:focus,
 .field textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  box-shadow: 0 0 0 3px rgba(36,208,122,0.18);
 }
 
 .field input::placeholder { color: var(--text-muted); }
@@ -1079,7 +1133,7 @@ tbody tr:hover { background: rgba(139,130,245,0.09); }
   transition: border-color var(--transition);
 }
 
-.checkbox-item:hover { border-color: rgba(255,255,255,0.16); }
+.checkbox-item:hover { border-color: var(--border-strong); }
 
 .checkbox-item input[type="checkbox"] {
   width: auto;
@@ -1121,8 +1175,8 @@ input[type="date"] {
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2E3140; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #3C4052; }
+::-webkit-scrollbar-thumb { background: var(--scroll); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scroll-hover); }
 
 /* ── Mobile menu button (hidden on desktop) ── */
 .mobile-menu-btn {
@@ -1361,7 +1415,7 @@ body.role-direktor .buxgalter-only { display: none !important; }
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
-.budget-item:hover { border-color: rgba(255,255,255,0.16); }
+.budget-item:hover { border-color: var(--border-strong); }
 
 /* Jadval qatori amal tugmalari */
 .row-actions .btn { transition: transform 0.12s ease, background var(--transition), color var(--transition); }
@@ -1399,7 +1453,7 @@ tbody tr:hover .badge { transform: scale(1.04); }
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
   animation: shimmer 1.4s infinite;
 }
 @keyframes shimmer { 100% { transform: translateX(100%); } }
@@ -1476,8 +1530,12 @@ tbody td, .budget-item-amounts, .firm-selector select,
 .sidebar { border-right: 1px solid var(--border); }
 .nav-item { font-weight: 500; }
 .nav-item.active { font-weight: 600; }
-.logo-icon { background: var(--gradient-ink); box-shadow: var(--shadow-sm); }
-.firm-selector { background: var(--bg-2); }
+/* RaqamX X-belgisi — qutisiz, oq chiziqlar + yashil yelka */
+.logo-icon { background: none; box-shadow: none; color: var(--text-white); width: 32px; height: 32px; }
+.logo-icon svg { width: 30px; height: 30px; }
+.logo-name { letter-spacing: 0.03em; }
+.sidebar { background: var(--sidebar-bg); }
+.firm-selector { background: transparent; }
 .firm-selector select { background: var(--bg-3); border-radius: var(--radius-sm); font-weight: 500; }
 
 /* ── Tugmalar — premium ── */
@@ -1492,7 +1550,7 @@ tbody td { padding: 13px 18px; }
 .table-wrap { border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
 
 /* ── Topbar — toza ── */
-.topbar { background: rgba(10,11,16,0.72); border-bottom: 1px solid var(--border); }
+.topbar { background: var(--topbar-bg); border-bottom: 1px solid var(--border); }
 
 /* ── Badge/pill — biroz yumaloqroq ── */
 .badge { font-weight: 600; }
@@ -1510,6 +1568,13 @@ tbody td { padding: 13px 18px; }
 .spark { position: absolute; right: 16px; bottom: 15px; width: 72px; height: 28px; pointer-events: none; opacity: 0.92; }
 .stat-card .stat-value { position: relative; z-index: 1; }
 @media (max-width: 560px) { .spark { display: none; } }
+
+/* ── Tema almashtirish tugmasi (quyosh/oy) ── */
+.theme-toggle .ic-sun { display: none; }
+:root[data-theme="light"] .theme-toggle .ic-moon { display: none; }
+:root[data-theme="light"] .theme-toggle .ic-sun { display: block; }
+.theme-toggle { color: var(--text-secondary); }
+.theme-toggle:hover { color: var(--accent); }
 
 /* ── Xarajatlar tarkibi — gorizontal bar ── */
 .breakdown {

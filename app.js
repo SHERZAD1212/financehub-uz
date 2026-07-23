@@ -290,6 +290,33 @@ function sparklineSVG(values, color) {
     <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.6" fill="${color}"/></svg>`;
 }
 
+// ── Tema (light / dark) ──
+function applyTheme(theme) {
+  if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  else document.documentElement.removeAttribute('data-theme');
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', theme === 'light' ? '#EEF2F1' : '#0A1312');
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const next = cur === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  try { localStorage.setItem('raqamx-theme', next); } catch (_) {}
+  if (state) renderAll(); // grafiklar yangi ranglar bilan qayta chiziladi
+}
+
+// Grafik ranglari — joriy temadan o'qiladi (light/dark ga moslashadi)
+function chartColors() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const cs = getComputedStyle(document.documentElement);
+  return {
+    tick: (cs.getPropertyValue('--text-muted').trim() || '#8AA19C'),
+    legend: (cs.getPropertyValue('--text-secondary').trim() || '#8AA19C'),
+    grid: isLight ? 'rgba(12,90,82,0.10)' : 'rgba(255,255,255,0.05)',
+    cardBg: (cs.getPropertyValue('--bg-card').trim() || '#101B1A')
+  };
+}
+
 // Ism/nomdan avatar harflari
 function avatarInitials(name) {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
@@ -1544,7 +1571,7 @@ function printPL() {
 
   const html = `<div style="font-family:Inter,Arial,sans-serif;max-width:760px;margin:0 auto;padding:40px;color:#1A1D29">
     <div style="display:flex;justify-content:space-between;border-bottom:2px solid #E5E7EB;padding-bottom:20px;margin-bottom:24px">
-      <div><h1 style="font-size:24px;font-weight:800;color:#6C5CE7;margin:0 0 4px">FOYDA VA ZARAR HISOBOTI</h1>
+      <div><h1 style="font-size:24px;font-weight:800;color:#0C5A52;margin:0 0 4px">FOYDA VA ZARAR HISOBOTI</h1>
         <div style="font-size:13px;color:#6B7280">Davr: ${escHtml(plPeriodLabel(from, to))}</div></div>
       <div style="text-align:right"><div style="font-size:16px;font-weight:700">${escHtml(firm.name || '')}</div>
         <div style="font-size:12px;color:#6B7280">STIR: ${escHtml(firm.stir || '—')}</div></div>
@@ -1558,10 +1585,10 @@ function printPL() {
       ${sec('Soliqlar', 'tax', -1)}
       <tr style="border-top:2px solid #1A1D29;background:#F5F6F8">
         <td style="padding:14px 12px;font-weight:800;font-size:15px">SOF FOYDA / ZARAR</td>
-        <td style="padding:14px 12px;text-align:right;font-weight:800;font-size:16px;color:${p.netProfit >= 0 ? '#16A34A' : '#DC2626'}">${money(p.netProfit)}</td></tr>
+        <td style="padding:14px 12px;text-align:right;font-weight:800;font-size:16px;color:${p.netProfit >= 0 ? '#24D07A' : '#DC2626'}">${money(p.netProfit)}</td></tr>
     </table>
     <div style="margin-top:24px;font-size:11px;color:#9CA3AF;text-align:center">
-      FinanceHub UZ · ${formatDate(today())} · Hisoblangan (accrual) asosidagi hisobot</div>
+      RaqamX · ${formatDate(today())} · Hisoblangan (accrual) asosidagi hisobot</div>
   </div>`;
 
   const win = window.open('', '_blank');
@@ -1642,23 +1669,24 @@ function renderCashflow() {
   const ctx = document.getElementById('cashflowDetailChart');
   if (ctx) {
     if (cashflowDetailChartInstance) cashflowDetailChartInstance.destroy();
+    const tc = chartColors();
     cashflowDetailChartInstance = new Chart(ctx, {
       type: 'line',
       data: {
         labels: cf.sorted.map(monthLabel),
         datasets: [
           { label: 'Kirim', data: cf.sorted.map(m => cf.months[m].in / 1e6),
-            borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.10)', fill: true, tension: .4, pointRadius: 4 },
+            borderColor: '#24D07A', backgroundColor: 'rgba(36,208,122,0.10)', fill: true, tension: .4, pointRadius: 4 },
           { label: 'Chiqim', data: cf.sorted.map(m => cf.months[m].out / 1e6),
-            borderColor: '#E5484D', backgroundColor: 'rgba(229,72,77,0.10)', fill: true, tension: .4, pointRadius: 4 }
+            borderColor: '#E5636C', backgroundColor: 'rgba(229,99,108,0.10)', fill: true, tension: .4, pointRadius: 4 }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#A9ADBD', font: { family: 'Inter', size: 12 } } } },
+        plugins: { legend: { labels: { color: tc.legend, usePointStyle: true, pointStyle: 'circle', font: { family: 'Space Grotesk', size: 12 } } } },
         scales: {
-          x: { ticks: { color: '#7E8294', font: { family: 'Inter' } }, grid: { color: 'rgba(255,255,255,0.07)' } },
-          y: { ticks: { color: '#7E8294', font: { family: 'Inter' }, callback: v => v + ' mln' }, grid: { color: 'rgba(255,255,255,0.07)' } }
+          x: { ticks: { color: tc.tick, font: { family: 'Space Grotesk' } }, grid: { color: tc.grid } },
+          y: { ticks: { color: tc.tick, font: { family: 'Space Grotesk' }, callback: v => v + ' mln' }, grid: { color: tc.grid } }
         }
       }
     });
@@ -2481,30 +2509,31 @@ function updateChart() {
     return g;
   };
   const dot = (hex) => months.map((_, i) => i === last ? 5 : 0);
+  const tc = chartColors();
 
   cashflowChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels: months.map(monthLabel),
       datasets: [
-        { label: 'Kirim', data: inData, borderColor: '#34D399', backgroundColor: areaGrad('#34D399'),
+        { label: 'Kirim', data: inData, borderColor: '#24D07A', backgroundColor: areaGrad('#24D07A'),
           fill: true, tension: 0.4, borderWidth: 2.6, pointRadius: dot(), pointHoverRadius: 5,
-          pointBackgroundColor: '#34D399', pointBorderColor: '#0A0B10', pointBorderWidth: 2 },
-        { label: 'Chiqim', data: outData, borderColor: '#F2696C', backgroundColor: areaGrad('#F2696C'),
+          pointBackgroundColor: '#24D07A', pointBorderColor: tc.cardBg, pointBorderWidth: 2 },
+        { label: 'Chiqim', data: outData, borderColor: '#E5636C', backgroundColor: areaGrad('#E5636C'),
           fill: true, tension: 0.4, borderWidth: 2.6, pointRadius: dot(), pointHoverRadius: 5,
-          pointBackgroundColor: '#F2696C', pointBorderColor: '#0A0B10', pointBorderWidth: 2 }
+          pointBackgroundColor: '#E5636C', pointBorderColor: tc.cardBg, pointBorderWidth: 2 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { intersect: false, mode: 'index' },
       plugins: {
-        legend: { labels: { color: '#A9ADBD', usePointStyle: true, pointStyle: 'circle', boxWidth: 8, font: { family: 'Inter', size: 12 } } },
+        legend: { labels: { color: tc.legend, usePointStyle: true, pointStyle: 'circle', boxWidth: 8, font: { family: 'Space Grotesk', size: 12 } } },
         tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw.toFixed(1)} mln so'm` } }
       },
       scales: {
-        x: { ticks: { color: '#7E8294', font: { family: 'Inter', size: 11 } }, grid: { display: false } },
-        y: { ticks: { color: '#7E8294', font: { family: 'Inter', size: 11 }, callback: v => v + ' mln' }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } }
+        x: { ticks: { color: tc.tick, font: { family: 'Space Grotesk', size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: tc.tick, font: { family: 'Space Grotesk', size: 11 }, callback: v => v + ' mln' }, grid: { color: tc.grid }, border: { display: false } }
       }
     }
   });
@@ -2528,7 +2557,7 @@ function updateCategoryChart() {
   }
 
   const max = entries[0][1] || 1;
-  const colors = ['#8B82F5', '#7B72EE', '#9E97F2', '#B0AAF6', '#C6C1F9', 'var(--border)'];
+  const colors = ['#24D07A', '#1FB86C', '#4ADE80', '#7DE9A8', '#A7EFC4', 'var(--border)'];
   el.innerHTML = entries.map(([name, val], i) => {
     const pct = Math.max(4, Math.round(val / max * 100));
     return `<div class="brk-line">
