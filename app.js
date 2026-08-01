@@ -2100,6 +2100,21 @@ function renderAdmin() {
   const firm = state.firms.find(f => f.id === activeFirmId);
 
   wrap.innerHTML = `
+    <!-- KIRISH MA'LUMOTLARI -->
+    <div class="chart-card" style="padding:0;overflow:hidden;margin-bottom:24px">
+      <div style="padding:16px 20px;background:var(--bg-3)"><strong style="font-size:15px">🔐 Kirish ma'lumotlari</strong></div>
+      <div style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em">Email (login)</div>
+          <div style="font-weight:600;font-size:15px;margin-top:2px">${escHtml((currentUser && currentUser.email) || '—')}</div>
+        </div>
+        <button class="btn btn-secondary" onclick="openPasswordModal()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Parolni o'zgartirish
+        </button>
+      </div>
+    </div>
+
     <!-- FIRMALAR -->
     <div class="chart-card" style="padding:0;overflow:hidden;margin-bottom:24px">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--bg-3)">
@@ -2160,6 +2175,36 @@ function renderAdmin() {
       </table></div>` :
       `<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px">Hali hisobot yo'q. "Turlarni tanlash" yoki "Hisobot qo'shish" orqali kiriting.</div>`}
     </div>`;
+}
+
+// ── Parolni o'zgartirish (o'z akkaunti) ──
+function openPasswordModal() {
+  openModal('Parolni o\'zgartirish', `
+    <div class="field">
+      <label>Yangi parol *</label>
+      <input id="pw_new" type="password" placeholder="Kamida 6 belgi" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label>Yangi parolni takrorlang *</label>
+      <input id="pw_confirm" type="password" autocomplete="new-password">
+    </div>
+    <div class="field-hint">Parol kamida 6 ta belgidan iborat bo'lsin. O'zgartirgach, keyingi kirishda yangi paroldan foydalanasiz.</div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="savePassword(this)">Saqlash</button>`);
+}
+
+async function savePassword(btn) {
+  const p1 = document.getElementById('pw_new').value;
+  const p2 = document.getElementById('pw_confirm').value;
+  if (!p1 || p1.length < 6) { toast('Parol kamida 6 belgi bo\'lsin', 'warning'); return; }
+  if (p1 !== p2) { toast('Parollar mos kelmadi', 'warning'); return; }
+  setBtnLoading(btn, true);
+  try {
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) { toast('Xatolik: ' + error.message, 'error', 6000); return; }
+    closeModal();
+    toast('Parol muvaffaqiyatli o\'zgartirildi', 'success', 4000);
+  } finally { setBtnLoading(btn, false); }
 }
 
 async function deleteFirm(id) {
