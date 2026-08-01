@@ -19,6 +19,18 @@ const SUPABASE_URL = 'https://akevycuxpvmdtjprerfr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrZXZ5Y3V4cHZtZHRqcHJlcmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNDY2NzAsImV4cCI6MjA5OTYyMjY3MH0.ez7RubUUTDwzGqBNwfAEiNcdLmafhhegRUYObLQn1ew';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Login (username) tizimi: login nomi ichki domenga bog'lanadi.
+// "Maksudov_buxgalter" → "maksudov_buxgalter@raqamx.app". Foydalanuvchi faqat loginni ko'radi.
+const LOGIN_DOMAIN = '@raqamx.app';
+function loginToEmail(login) {
+  const v = String(login || '').trim();
+  return v.includes('@') ? v : v.toLowerCase() + LOGIN_DOMAIN;
+}
+function emailToLogin(email) {
+  const v = String(email || '');
+  return v.toLowerCase().endsWith(LOGIN_DOMAIN) ? v.slice(0, -LOGIN_DOMAIN.length) : v;
+}
+
 // ══════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════
@@ -2105,13 +2117,19 @@ function renderAdmin() {
       <div style="padding:16px 20px;background:var(--bg-3)"><strong style="font-size:15px">🔐 Kirish ma'lumotlari</strong></div>
       <div style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
         <div>
-          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em">Email (login)</div>
-          <div style="font-weight:600;font-size:15px;margin-top:2px">${escHtml((currentUser && currentUser.email) || '—')}</div>
+          <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em">Login</div>
+          <div style="font-weight:600;font-size:15px;margin-top:2px">${escHtml(emailToLogin((currentUser && currentUser.email) || '') || '—')}</div>
         </div>
-        <button class="btn btn-secondary" onclick="openPasswordModal()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Parolni o'zgartirish
-        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="openLoginModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Login o'zgartirish
+          </button>
+          <button class="btn btn-secondary" onclick="openPasswordModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Parolni o'zgartirish
+          </button>
+        </div>
       </div>
     </div>
 
@@ -2204,6 +2222,36 @@ async function savePassword(btn) {
     if (error) { toast('Xatolik: ' + error.message, 'error', 6000); return; }
     closeModal();
     toast('Parol muvaffaqiyatli o\'zgartirildi', 'success', 4000);
+  } finally { setBtnLoading(btn, false); }
+}
+
+// ── Login (username) o'zgartirish ──
+function openLoginModal() {
+  openModal('Login o\'zgartirish', `
+    <div class="field-hint" style="margin-bottom:12px">Joriy login: <b>${escHtml(emailToLogin((currentUser && currentUser.email) || '') || '—')}</b></div>
+    <div class="field">
+      <label>Yangi login *</label>
+      <input id="lg_new" type="text" placeholder="Masalan: Maksudov_buxgalter" autocomplete="username">
+    </div>
+    <div class="field-hint">Faqat harflar, raqamlar va pastki chiziq (_). Masalan: <b>Maksudov_buxgalter</b>. Login o'zgargach, keyingi kirishda yangi login bilan kirasiz.</div>`,
+    `<button class="btn btn-secondary" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="saveLogin(this)">Saqlash</button>`);
+}
+
+async function saveLogin(btn) {
+  const raw = document.getElementById('lg_new').value.trim();
+  if (!raw) { toast('Login kiriting', 'warning'); return; }
+  if (raw.includes('@') || raw.includes(' ')) { toast('Login @ yoki bo\'sh joysiz bo\'lsin', 'warning'); return; }
+  if (!/^[A-Za-z0-9_.\-]{3,}$/.test(raw)) { toast('Login kamida 3 belgi: harf, raqam, _ . -', 'warning', 5000); return; }
+  const email = loginToEmail(raw);
+  if (currentUser && email === (currentUser.email || '').toLowerCase()) { toast('Bu allaqachon joriy login', 'warning'); return; }
+  setBtnLoading(btn, true);
+  try {
+    const { error } = await sb.auth.updateUser({ email });
+    if (error) { toast('Xatolik: ' + error.message, 'error', 7000); return; }
+    closeModal();
+    toast('Login o\'zgartirildi: ' + raw, 'success', 5000);
+    await refreshAndRender();
   } finally { setBtnLoading(btn, false); }
 }
 
@@ -2725,7 +2773,7 @@ function updateClock() {
 
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('login_email').value.trim();
+  const email = loginToEmail(document.getElementById('login_email').value);
   const password = document.getElementById('login_password').value;
   const errEl = document.getElementById('loginError');
   const btn = e.target.querySelector('button[type="submit"]');
@@ -2734,7 +2782,7 @@ async function handleLogin(e) {
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) {
     setBtnLoading(btn, false);
-    errEl.textContent = 'Email yoki parol noto\'g\'ri.';
+    errEl.textContent = 'Login yoki parol noto\'g\'ri.';
     return;
   }
   await startApp();
