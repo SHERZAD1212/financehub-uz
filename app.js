@@ -2243,15 +2243,13 @@ async function saveLogin(btn) {
   if (!raw) { toast('Login kiriting', 'warning'); return; }
   if (raw.includes('@') || raw.includes(' ')) { toast('Login @ yoki bo\'sh joysiz bo\'lsin', 'warning'); return; }
   if (!/^[A-Za-z0-9_.\-]{3,}$/.test(raw)) { toast('Login kamida 3 belgi: harf, raqam, _ . -', 'warning', 5000); return; }
-  const email = loginToEmail(raw);
-  if (currentUser && email === (currentUser.email || '').toLowerCase()) { toast('Bu allaqachon joriy login', 'warning'); return; }
   setBtnLoading(btn, true);
   try {
-    const { error } = await sb.auth.updateUser({ email });
+    // Baza funksiyasi orqali (email yubormasdan) o'zgartiramiz — soxta domen uchun
+    const { error } = await sb.rpc('change_my_login', { new_login: raw });
     if (error) { toast('Xatolik: ' + error.message, 'error', 7000); return; }
     closeModal();
-    toast('Login o\'zgartirildi: ' + raw, 'success', 5000);
-    await refreshAndRender();
+    toast('Login o\'zgartirildi: ' + raw + '. Chiqib, yangi login bilan kiring.', 'success', 7000);
   } finally { setBtnLoading(btn, false); }
 }
 
