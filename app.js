@@ -2701,6 +2701,56 @@ async function handleLogout() {
   location.reload();
 }
 
+function showAuthScreen(which) {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = '';
+  document.getElementById('loginForm').style.display = which === 'login' ? '' : 'none';
+  document.getElementById('forgotForm').style.display = which === 'forgot' ? '' : 'none';
+  document.getElementById('resetPasswordForm').style.display = which === 'reset' ? '' : 'none';
+}
+
+async function handleForgotPassword(e) {
+  e.preventDefault();
+  const email = document.getElementById('forgot_email').value.trim();
+  const errEl = document.getElementById('forgotError');
+  const btn = e.target.querySelector('button[type="submit"]');
+  errEl.textContent = '';
+  setBtnLoading(btn, true);
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  setBtnLoading(btn, false);
+  if (error) {
+    errEl.textContent = 'Xatolik: ' + error.message;
+    return;
+  }
+  e.target.reset();
+  toast('Agar bu email ro\'yxatdan o\'tgan bo\'lsa, tiklash havolasi yuborildi.', 'success', 6000);
+}
+
+async function handleSetNewPassword(e) {
+  e.preventDefault();
+  const pw1 = document.getElementById('new_password').value;
+  const pw2 = document.getElementById('new_password_confirm').value;
+  const errEl = document.getElementById('resetError');
+  errEl.textContent = '';
+  if (pw1.length < 6) { errEl.textContent = 'Parol kamida 6 belgidan iborat bo\'lishi kerak.'; return; }
+  if (pw1 !== pw2) { errEl.textContent = 'Parollar mos kelmadi.'; return; }
+  const btn = e.target.querySelector('button[type="submit"]');
+  setBtnLoading(btn, true);
+  const { error } = await sb.auth.updateUser({ password: pw1 });
+  setBtnLoading(btn, false);
+  if (error) {
+    errEl.textContent = 'Xatolik: ' + error.message;
+    return;
+  }
+  history.replaceState(null, '', window.location.pathname);
+  await sb.auth.signOut();
+  e.target.reset();
+  showAuthScreen('login');
+  toast('Parol muvaffaqiyatli yangilandi. Endi yangi parol bilan kiring.', 'success', 6000);
+}
+
 async function startApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = '';
@@ -2737,12 +2787,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 
+  const forgotForm = document.getElementById('forgotForm');
+  if (forgotForm) forgotForm.addEventListener('submit', handleForgotPassword);
+  const resetPasswordForm = document.getElementById('resetPasswordForm');
+  if (resetPasswordForm) resetPasswordForm.addEventListener('submit', handleSetNewPassword);
+  document.getElementById('forgotPasswordLink')?.addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('forgotError').textContent = '';
+    showAuthScreen('forgot');
+  });
+  document.getElementById('backToLoginLink')?.addEventListener('click', e => {
+    e.preventDefault();
+    showAuthScreen('login');
+  });
+
+  let isPasswordRecovery = false;
+  sb.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      isPasswordRecovery = true;
+      showAuthScreen('reset');
+    }
+  });
+
   const { data: { session } } = await sb.auth.getSession();
-  if (session) {
+  if (session && !isPasswordRecovery) {
     await startApp();
-  } else {
-    document.getElementById('loginScreen').style.display = '';
-    document.getElementById('app').style.display = 'none';
+  } else if (!isPasswordRecovery) {
+    showAuthScreen('login');
   }
 
   document.addEventListener('click', e => {
